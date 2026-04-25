@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רשימת הצעות מחיר</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background-color: #f2f2f2; }
+        a { text-decoration: none; color: #007bff; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>רשימת הצעות מחיר</h1>
+    <p><a href="/proposals/new">+ יצירת הצעת מחיר חדשה</a></p>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>שם לקוח</th>
+                <th>טלפון לקוח</th>
+                <th>מוצר</th>
+                <th>כמות</th>
+                <th>מחיר</th>
+                <th>סטטוס</th>
+                <th>פעולות</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proposal in proposals %}
+            <tr>
+                <td>{{ proposal.id }}</td>
+                <td>{{ proposal.customer_name }}</td>
+                <td>{{ proposal.customer_phone }}</td>
+                <td>{{ proposal.product_name }}</td>
+                <td>{{ proposal.quantity }}</td>
+                <td>{{ proposal.price }}</td>
+                <td>{{ proposal.status }}</td>
+                <td>
+                    <a href="{{ url_for('proposal_detail', proposal_id=proposal.id) }}">צפייה</a> |
+                    <a href="#">עריכה</a> |
+                    <a href="#">מחיקה</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8">אין הצעות מחיר במערכת.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="/">חזור לדף הבית</a></p>
+</body>
+</html>

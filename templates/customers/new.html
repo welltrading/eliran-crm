@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}לקוח חדש{% endblock %}
+{% block page_title %}<i class="bi bi-person-plus me-2"></i>לקוח חדש{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('customers_list') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-person-plus me-2"></i>הוספת לקוח חדש</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label fw-600">שם מלא <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="ישראל ישראלי" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-600">טלפון</label>
+            <input type="tel" name="phone" class="form-control" placeholder="050-0000000">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-600">אימייל</label>
+            <input type="email" name="email" class="form-control" placeholder="email@example.com">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-600">כתובת</label>
+            <input type="text" name="address" class="form-control" placeholder="רחוב, עיר">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-600">הערות</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="הערות נוספות..."></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>שמירה
+            </button>
+            <a href="{{ url_for('customers_list') }}" class="btn btn-outline-secondary">ביטול</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

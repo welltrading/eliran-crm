@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}פרטי הצעה{% endblock %}
+{% block page_title %}<i class="bi bi-file-earmark-text me-2"></i>פרטי הצעת מחיר{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('quote_pdf', record_id=quote.id) }}" class="btn btn-danger btn-sm" target="_blank">
+    <i class="bi bi-file-earmark-pdf me-1"></i>הורד PDF
+  </a>
+  <a href="{{ url_for('quotes_list') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-text me-2"></i>פרטי הצעה</span>
+        <a href="{{ url_for('quote_pdf', record_id=quote.id) }}" class="btn btn-danger btn-sm" target="_blank">
+          <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </a>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled">
+          <li class="mb-3">
+            <small class="text-muted d-block">מזהה</small>
+            <code class="small">{{ quote.id }}</code>
+          </li>
+          {% if quote.get('שם לקוח') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">שם לקוח</small>
+            <strong>{{ quote.get('שם לקוח') }}</strong>
+          </li>
+          {% endif %}
+          {% if quote.get('טלפון') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">טלפון</small>
+            <span>{{ quote.get('טלפון') }}</span>
+          </li>
+          {% endif %}
+          {% if quote.get('כתובת') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">כתובת</small>
+            <span>{{ quote.get('כתובת') }}</span>
+          </li>
+          {% endif %}
+          <li class="mb-3">
+            <small class="text-muted d-block">סטטוס</small>
+            {% set s = quote.get('סטטוס', '') %}
+            <span class="badge {% if s == 'אושרה' %}status-done{% elif s == 'נדחתה' %}status-cancelled{% elif s == 'נשלחה' %}status-progress{% else %}status-new{% endif %} fs-6">{{ s or 'טיוטה' }}</span>
+          </li>
+          {% if quote.get('סטנדרטי/ייצור אישי') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">סוג</small>
+            <span>{{ quote.get('סטנדרטי/ייצור אישי') }}</span>
+          </li>
+          {% endif %}
+          {% if quote.get('כמות') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">כמות</small>
+            <span>{{ quote.get('כמות') }}</span>
+          </li>
+          {% endif %}
+          {% if quote.get('מחיר בשקלים') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">מחיר</small>
+            <span class="fw-bold fs-5 text-success">₪{{ quote.get('מחיר בשקלים') }}</span>
+          </li>
+          {% endif %}
+          {% if quote.get('הערות') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">הערות</small>
+            <span>{{ quote.get('הערות') }}</span>
+          </li>
+          {% endif %}
+        </ul>
+        <hr>
+        <h6 class="text-muted mb-3">כל השדות</h6>
+        {% for key, val in quote.items() %}
+        {% if key != 'id' %}
+        <div class="mb-2">
+          <small class="text-muted">{{ key }}</small>
+          <div>{{ val if val is string else val|join(', ') if val is iterable else val }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

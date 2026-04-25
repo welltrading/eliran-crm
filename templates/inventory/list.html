@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}מלאי{% endblock %}
+{% block page_title %}<i class="bi bi-boxes me-2"></i>מלאי{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-boxes me-2"></i>מלאי לפי מיקום ({{ inventory|length }} רשומות)
+  </div>
+  <div class="card-body p-0">
+    {% if inventory %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>פריט / מוצר</th>
+            <th>מיקום</th>
+            <th>כמות</th>
+            <th>סטטוס</th>
+            <th>הערות</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in inventory %}
+          <tr>
+            <td><strong>{{ item.get('מוצר', item.get('שם', item.get('פריט', '—'))) }}</strong></td>
+            <td>{{ item.get('מיקום', '—') }}</td>
+            <td>
+              {% set qty = item.get('כמות', item.get('מלאי', '—')) %}
+              {% if qty is number %}
+                <span class="badge {% if qty <= 0 %}status-cancelled{% elif qty < 5 %}status-pending{% else %}status-done{% endif %}">{{ qty }}</span>
+              {% else %}
+                {{ qty }}
+              {% endif %}
+            </td>
+            <td>
+              {% set s = item.get('סטטוס', '') %}
+              {% if s %}<span class="badge status-new">{{ s }}</span>{% else %}—{% endif %}
+            </td>
+            <td class="text-muted small">{{ item.get('הערות', '') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+      אין נתוני מלאי
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

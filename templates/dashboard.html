@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}דשבורד{% endblock %}
+{% block page_title %}<i class="bi bi-grid-fill me-2"></i>דשבורד{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('customer_new') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>לקוח חדש
+  </a>
+  <a href="{{ url_for('order_new') }}" class="btn btn-outline-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>הזמנה חדשה
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-xl-3 col-sm-6">
+    <a href="{{ url_for('customers_list') }}" class="text-decoration-none">
+      <div class="stat-card" style="background: linear-gradient(135deg,#1a237e,#3949ab)">
+        <i class="bi bi-people-fill stat-icon"></i>
+        <div class="stat-num">{{ stats.customers }}</div>
+        <div class="stat-label">לקוחות</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-xl-3 col-sm-6">
+    <a href="{{ url_for('orders_list') }}" class="text-decoration-none">
+      <div class="stat-card" style="background: linear-gradient(135deg,#1565c0,#1e88e5)">
+        <i class="bi bi-cart-fill stat-icon"></i>
+        <div class="stat-num">{{ stats.orders }}</div>
+        <div class="stat-label">הזמנות</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-xl-3 col-sm-6">
+    <a href="{{ url_for('tasks_list') }}" class="text-decoration-none">
+      <div class="stat-card" style="background: linear-gradient(135deg,#e65100,#f57c00)">
+        <i class="bi bi-check2-square stat-icon"></i>
+        <div class="stat-num">{{ stats.open_tasks }}</div>
+        <div class="stat-label">משימות פתוחות</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-xl-3 col-sm-6">
+    <a href="{{ url_for('inventory_list') }}" class="text-decoration-none">
+      <div class="stat-card" style="background: linear-gradient(135deg,#2e7d32,#43a047)">
+        <i class="bi bi-boxes stat-icon"></i>
+        <div class="stat-num">{{ stats.inventory_items }}</div>
+        <div class="stat-label">פריטי מלאי</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Recent Orders + Urgent Tasks -->
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-cart me-2"></i>הזמנות אחרונות</span>
+        <a href="{{ url_for('orders_list') }}" class="btn btn-outline-primary btn-sm">הכל</a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_orders %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>מזהה</th>
+                <th>לקוח</th>
+                <th>סטטוס</th>
+                <th>תאריך</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+              <tr onclick="window.location='{{ url_for('order_detail', record_id=order.id) }}'">
+                <td><span class="text-muted small">{{ order.id[:8] }}...</span></td>
+                <td>{{ order.get('לקוח', [''])|join(', ') if order.get('לקוח') else '—' }}</td>
+                <td>
+                  {% set s = order.get('סטטוס', '') %}
+                  <span class="badge {% if s in ['הושלם','אושר'] %}status-done{% elif s in ['בוטל'] %}status-cancelled{% elif s in ['בתהליך','בייצור'] %}status-progress{% else %}status-new{% endif %}">{{ s or 'חדש' }}</span>
+                </td>
+                <td class="text-muted small">{{ order.get('תאריך יצירה', '')[:10] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-cart-x fs-1 d-block mb-2"></i>אין הזמנות עדיין
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-exclamation-circle me-2"></i>משימות דחופות</span>
+        <a href="{{ url_for('tasks_list') }}" class="btn btn-outline-warning btn-sm">הכל</a>
+      </div>
+      <div class="card-body p-0">
+        {% if urgent_tasks %}
+        <ul class="list-group list-group-flush">
+          {% for task in urgent_tasks %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-500">{{ task.get('כותרת', task.get('שם', 'משימה')) }}</div>
+              <small class="text-muted">{{ task.get('תאריך', '') }}</small>
+            </div>
+            {% set s = task.get('סטטוס', '') %}
+            <span class="badge {% if s == 'ממתין' %}status-pending{% elif s == 'בתהליך' %}status-progress{% else %}status-new{% endif %}">{{ s or 'פתוח' }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-check2-all fs-1 d-block mb-2"></i>אין משימות פתוחות
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

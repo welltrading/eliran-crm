@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}מוצר חדש{% endblock %}
+{% block page_title %}<i class="bi bi-box-seam me-2"></i>הוספת מוצר חדש{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('products_list') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה למוצרים
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-plus-circle me-2"></i>פרטי מוצר חדש
+      </div>
+      <div class="card-body">
+        <form method="POST">
+
+          <div class="row g-3 mb-3">
+            <div class="col-12">
+              <label class="form-label fw-bold">דגם בסיס <span class="text-danger">*</span></label>
+              <input type="text" name="model_base" class="form-control" required placeholder="לדוגמה: KL-B14">
+              <div class="form-text">קוד הדגם הבסיסי של המוצר</div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">מידה</label>
+              <input type="text" name="size" class="form-control" placeholder="לדוגמה: 90/90">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">גובה</label>
+              <input type="text" name="height" class="form-control" placeholder="לדוגמה: 190">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">סוג זכוכית</label>
+              <input type="text" name="glass_type" class="form-control" placeholder="לדוגמה: שקופה, פסים, גרניט">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">גוון פרזול</label>
+              <input type="text" name="hardware_color" class="form-control" placeholder="לדוגמה: ניקל, שחור">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">דגם / תיאור המוצר</label>
+            <input type="text" name="model_name" class="form-control" placeholder="לדוגמה: מקלחון פינתי דגם שבתאי">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">תיאור המוצר</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="פרטים נוספים על המוצר..."></textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-lg me-1"></i>הוסף מוצר
+            </button>
+            <a href="{{ url_for('products_list') }}" class="btn btn-outline-secondary">ביטול</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

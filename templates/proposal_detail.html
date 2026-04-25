@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פרטי הצעת מחיר</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .detail-item { margin-bottom: 10px; }
+        .detail-item strong { display: inline-block; width: 120px; }
+        a { text-decoration: none; color: #007bff; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>פרטי הצעת מחיר #{{ proposal.id }}</h1>
+    <div class="detail-item"><strong>שם לקוח:</strong> {{ proposal.customer_name }}</div>
+    <div class="detail-item"><strong>טלפון לקוח:</strong> {{ proposal.customer_phone }}</div>
+    <div class="detail-item"><strong>מוצר:</strong> {{ proposal.product_name }}</div>
+    <div class="detail-item"><strong>כמות:</strong> {{ proposal.quantity }}</div>
+    <div class="detail-item"><strong>מחיר:</strong> {{ proposal.price }}</div>
+    <div class="detail-item"><strong>תנאי תשלום:</strong> {{ proposal.payment_terms }}</div>
+    <div class="detail-item"><strong>תוקף (ימים):</strong> {{ proposal.validity }}</div>
+    <div class="detail-item"><strong>סטטוס:</strong> {{ proposal.status }}</div>
+    <p><a href="/proposals">חזור לרשימת ההצעות</a></p>
+    <p><a href="/">חזור לדף הבית</a></p>
+</body>
+</html>

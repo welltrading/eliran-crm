@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עריכת הצעת מחיר</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>עריכת הצעת מחיר #{{ proposal.id }}</h1>
+        <form method="POST">
+            <label for="customer_name">שם לקוח:</label>
+            <input type="text" id="customer_name" name="customer_name" value="{{ proposal.customer_name }}" required>
+
+            <label for="customer_phone">טלפון לקוח:</label>
+            <input type="text" id="customer_phone" name="customer_phone" value="{{ proposal.customer_phone or '' }}">
+
+            <label for="product_name">שם מוצר:</label>
+            <input type="text" id="product_name" name="product_name" value="{{ proposal.product_name }}" required>
+
+            <label for="quantity">כמות:</label>
+            <input type="number" id="quantity" name="quantity" value="{{ proposal.quantity }}" required>
+
+            <label for="price">מחיר:</label>
+            <input type="number" id="price" name="price" step="0.01" value="{{ proposal.price }}" required>
+
+            <label for="payment_terms">תנאי תשלום:</label>
+            <textarea id="payment_terms" name="payment_terms">{{ proposal.payment_terms or '' }}</textarea>
+
+            <label for="validity">תוקף (ימים):</label>
+            <input type="number" id="validity" name="validity" value="{{ proposal.validity or '' }}">
+
+            <label for="status">סטטוס:</label>
+            <select id="status" name="status">
+                <option value="Draft" {% if proposal.status == 'Draft' %}selected{% endif %}>טיוטה</option>
+                <option value="Sent" {% if proposal.status == 'Sent' %}selected{% endif %}>נשלח</option>
+                <option value="Approved" {% if proposal.status == 'Approved' %}selected{% endif %}>אושר</option>
+                <option value="Rejected" {% if proposal.status == 'Rejected' %}selected{% endif %}>נדחה</option>
+                <option value="Converted" {% if proposal.status == 'Converted' %}selected{% endif %}>הומר להזמנה</option>
+            </select>
+
+            <button type="submit">שמור שינויים</button>
+            <a href="{{ url_for('proposal_detail', proposal_id=proposal.id) }}" class="button secondary">ביטול</a>
+        </form>
+    </div>
+</body>
+</html>

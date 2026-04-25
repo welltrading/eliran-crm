@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}משימות{% endblock %}
+{% block page_title %}<i class="bi bi-check2-square me-2"></i>משימות{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-check2-square me-2"></i>כל המשימות ({{ tasks|length }})</span>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      {% for s in ['', 'פתוח', 'בתהליך', 'ממתין', 'הושלם', 'אושר', 'בוטל'] %}
+        <a href="{{ url_for('tasks_list') }}{% if s %}?status={{ s }}{% endif %}"
+           class="btn btn-sm {% if status_filter == s %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+          {{ s or 'הכל' }}
+        </a>
+      {% endfor %}
+      <a href="{{ url_for('task_new') }}" class="btn btn-sm btn-success ms-2">
+        <i class="bi bi-plus-lg me-1"></i>משימה חדשה
+      </a>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    {% if tasks %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>תיאור</th>
+            <th>סוג</th>
+            <th>מתקין</th>
+            <th>סטטוס</th>
+            <th>תאריך ביצוע</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tasks %}
+          <tr>
+            <td><strong>{{ t.get('תיאור משימה', t.get('כותרת', t.get('שם', '—'))) }}</strong></td>
+            <td><span class="text-muted small">{{ t.get('סוג משימה כותרת לדאשבורד', t.get('סוג משימה', '—')) }}</span></td>
+            <td>
+              {% if t.get('מתקין') %}
+                {% for rid in t.get('מתקין', []) %}
+                  <span class="badge bg-secondary">{{ installers_map.get(rid, rid) }}</span>
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% set s = t.get('סטטוס', '') %}
+              <span class="badge {% if s in ['הושלם','אושר','בוצע'] %}status-done{% elif s == 'בוטל' %}status-cancelled{% elif s == 'בתהליך' %}status-progress{% elif s == 'ממתין' %}status-pending{% else %}status-new{% endif %}">
+                {{ s or 'פתוח' }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ t.get('תאריך ביצוע', t.get('תאריך', ''))[:10] if t.get('תאריך ביצוע') or t.get('תאריך') else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-check2-all fs-1 d-block mb-3"></i>
+      אין משימות{% if status_filter %} בסטטוס "{{ status_filter }}"{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}מוצרים{% endblock %}
+{% block page_title %}<i class="bi bi-box-seam me-2"></i>מוצרים{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('product_new') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>מוצר חדש
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-box-seam me-2"></i>רשימת מוצרים ({{ products|length }})</span>
+    <form class="d-flex gap-2" method="get">
+      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm search-box" placeholder="חפש שם מוצר...">
+      <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
+      {% if search %}<a href="{{ url_for('products_list') }}" class="btn btn-outline-secondary btn-sm">נקה</a>{% endif %}
+    </form>
+  </div>
+  <div class="card-body p-0">
+    {% if products %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="width:60px">תמונה</th>
+            <th>שם מוצר</th>
+            <th>מידה</th>
+            <th>סוג זכוכית</th>
+            <th>גוון פרזול</th>
+            <th>גובה</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+          <tr>
+            <td style="width:60px">
+              {% set img = p.get('תמונה') %}
+              {% if img and img|length > 0 %}
+              <img src="{{ img[0].get('url', '') }}" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">
+              {% else %}
+              <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width:50px;height:50px;">
+                <i class="bi bi-image text-muted"></i>
+              </div>
+              {% endif %}
+            </td>
+            <td><strong>{{ p.get('שם מוצר מלא', '—') }}</strong></td>
+            <td>{{ p.get('מידה', '—') }}</td>
+            <td>{{ p.get('סוג זכוכית', '—') }}</td>
+            <td>{{ p.get('גוון פרזול', '—') }}</td>
+            <td>{{ p.get('גובה', '—') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+      {% if search %}אין תוצאות עבור "{{ search }}"{% else %}אין מוצרים עדיין{% endif %}
+      <div class="mt-3">
+        <a href="{{ url_for('product_new') }}" class="btn btn-primary">
+          <i class="bi bi-plus-lg me-1"></i>הוסף מוצר ראשון
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

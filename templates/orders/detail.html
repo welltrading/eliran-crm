@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}פרטי הזמנה{% endblock %}
+{% block page_title %}<i class="bi bi-cart me-2"></i>פרטי הזמנה{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('order_pdf', record_id=order.id) }}" class="btn btn-danger btn-sm" target="_blank">
+    <i class="bi bi-file-earmark-pdf me-1"></i>הורד PDF
+  </a>
+  <a href="{{ url_for('orders_list') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Order Info -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-info-circle me-2"></i>פרטי הזמנה</span>
+        <a href="{{ url_for('order_pdf', record_id=order.id) }}" class="btn btn-danger btn-sm" target="_blank">
+          <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </a>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled">
+          <li class="mb-3">
+            <small class="text-muted d-block">מזהה</small>
+            <code class="small">{{ order.id }}</code>
+          </li>
+          <li class="mb-3">
+            <small class="text-muted d-block">לקוח</small>
+            <strong>{{ order.get('לקוח', ['—'])|join(', ') if order.get('לקוח') else '—' }}</strong>
+          </li>
+          <li class="mb-3">
+            <small class="text-muted d-block">תיאור</small>
+            <span>{{ order.get('תיאור', '—') }}</span>
+          </li>
+          <li class="mb-3">
+            <small class="text-muted d-block">סטטוס</small>
+            {% set s = order.get('סטטוס', '') %}
+            <span class="badge {% if s in ['הושלם','אושרה'] %}status-done{% elif s == 'בוטל' %}status-cancelled{% elif s in ['בתהליך','בייצור'] %}status-progress{% elif s == 'ממתינה לאישור' %}status-pending{% else %}status-new{% endif %} fs-6">{{ s or 'חדש' }}</span>
+          </li>
+          {% if order.get('תאריך יצירה') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">תאריך יצירה</small>
+            <span>{{ order.get('תאריך יצירה', '')[:10] }}</span>
+          </li>
+          {% endif %}
+          {% if order.get('הערות') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">הערות</small>
+            <span>{{ order.get('הערות') }}</span>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Update Status -->
+    <div class="card">
+      <div class="card-header"><i class="bi bi-arrow-repeat me-2"></i>עדכון סטטוס</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('order_update_status', record_id=order.id) }}">
+          <div class="mb-3">
+            <select name="status" class="form-select">
+              {% for s in ['טיוטה','ממתינה לאישור','אושרה','בייצור','מוכנה','הותקנה','הושלם','בוטל'] %}
+              <option value="{{ s }}" {% if order.get('סטטוס') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">
+            <i class="bi bi-check-lg me-1"></i>עדכן סטטוס
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Lines -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-ul me-2"></i>שורות הזמנה ({{ lines|length }})</span>
+      </div>
+      <div class="card-body p-0">
+        {% if lines %}
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead>
+              <tr><th>פריט</th><th>כמות</th><th>מחיר יחידה</th><th>סה"כ</th></tr>
+            </thead>
+            <tbody>
+              {% for line in lines %}
+              <tr>
+                <td>{{ line.get('מוצר', line.get('שם', '—')) }}</td>
+                <td>{{ line.get('כמות', '—') }}</td>
+                <td>{{ line.get('מחיר', '—') }}</td>
+                <td>{{ line.get('סה"כ', '—') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-list-ul fs-2 d-block mb-2"></i>אין שורות הזמנה
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- All fields from Airtable -->
+    <div class="card mt-3">
+      <div class="card-header"><i class="bi bi-database me-2"></i>כל השדות מ-Airtable</div>
+      <div class="card-body">
+        <div class="row">
+          {% for key, val in order.items() %}
+          {% if key != 'id' %}
+          <div class="col-sm-6 mb-2">
+            <small class="text-muted">{{ key }}</small>
+            <div class="fw-500">{{ val if val is string else val|join(', ') if val is iterable else val }}</div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}לקוחות{% endblock %}
+{% block page_title %}<i class="bi bi-people-fill me-2"></i>לקוחות{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('customer_new') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>לקוח חדש
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-people me-2"></i>כל הלקוחות ({{ customers|length }})</span>
+    <form method="get" class="d-flex gap-2">
+      <input type="text" name="q" value="{{ search }}" placeholder="חיפוש לפי שם / טלפון..." class="form-control form-control-sm search-box">
+      <button class="btn btn-outline-primary btn-sm" type="submit"><i class="bi bi-search"></i></button>
+      {% if search %}<a href="{{ url_for('customers_list') }}" class="btn btn-outline-secondary btn-sm">נקה</a>{% endif %}
+    </form>
+  </div>
+  <div class="card-body p-0">
+    {% if customers %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>שם</th>
+            <th>טלפון</th>
+            <th>אימייל</th>
+            <th>כתובת</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in customers %}
+          <tr onclick="window.location='{{ url_for('customer_detail', record_id=c.id) }}'">
+            <td><strong>{{ c.get('שם', '—') }}</strong></td>
+            <td>{{ c.get('טלפון', '—') }}</td>
+            <td>{{ c.get('אימייל', '—') }}</td>
+            <td>{{ c.get('כתובת', '—') }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('customer_detail', record_id=c.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-people fs-1 d-block mb-3"></i>
+      {% if search %}
+        לא נמצאו לקוחות עבור "{{ search }}"
+      {% else %}
+        אין לקוחות עדיין. <a href="{{ url_for('customer_new') }}">הוסף לקוח חדש</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

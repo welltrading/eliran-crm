@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}משימה חדשה{% endblock %}
+{% block page_title %}<i class="bi bi-plus-circle me-2"></i>משימה חדשה{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-check2-square me-2"></i>יצירת משימה חדשה
+      </div>
+      <div class="card-body">
+        <form method="POST">
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">תיאור המשימה <span class="text-danger">*</span></label>
+            <textarea name="description" class="form-control" rows="3" required placeholder="תיאור המשימה..."></textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">מתקין</label>
+              <select name="installer_id" class="form-select">
+                <option value="">— בחר מתקין —</option>
+                {% for inst in installers %}
+                <option value="{{ inst.id }}">{{ inst.get('Name', inst.get('שם פרטי', '—')).strip() }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">תאריך ביצוע</label>
+              <input type="date" name="date" class="form-control">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">סטטוס</label>
+            <select name="status" class="form-select">
+              <option value="פתוח" selected>פתוח</option>
+              <option value="בתהליך">בתהליך</option>
+              <option value="ממתין">ממתין</option>
+              <option value="הושלם">הושלם</option>
+              <option value="בוטל">בוטל</option>
+            </select>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-lg me-1"></i>צור משימה
+            </button>
+            <a href="{{ url_for('tasks_list') }}" class="btn btn-outline-secondary">ביטול</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

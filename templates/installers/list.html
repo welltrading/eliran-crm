@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}מתקינים{% endblock %}
+{% block page_title %}<i class="bi bi-tools me-2"></i>מתקינים{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-tools me-2"></i>צוות מתקינים ({{ installers|length }})
+  </div>
+  <div class="card-body p-0">
+    {% if installers %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr><th>שם</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for inst in installers %}
+          <tr onclick="window.location='{{ url_for('installer_detail', record_id=inst.id) }}'">
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning d-inline-flex align-items-center justify-content-center text-dark fw-bold" style="width:36px;height:36px;font-size:0.9rem">
+                  {{ inst.get('שם','?')[0] }}
+                </div>
+                <strong>{{ inst.get('שם', '—') }}</strong>
+              </div>
+            </td>
+            <td>{{ inst.get('טלפון', '—') }}</td>
+            <td>
+              {% set s = inst.get('סטטוס', inst.get('פעיל', '')) %}
+              {% if s %}<span class="badge status-done">{{ s }}</span>{% else %}<span class="badge status-new">פעיל</span>{% endif %}
+            </td>
+            <td class="text-muted small">{{ inst.get('הערות', '') }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('installer_detail', record_id=inst.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-person-x fs-1 d-block mb-3"></i>אין מתקינים
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

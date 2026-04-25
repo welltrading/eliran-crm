@@ -1,0 +1,35 @@
+# סודות וקונפיגורציה מקומית
+.a0proj/
+*.env
+.env*
+secrets.env
+variables.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# מסד נתונים
+*.db
+*.sqlite
+*.sqlite3
+
+# לוגים וקבצים זמניים
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

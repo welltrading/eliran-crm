@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
+    * { font-family: 'Heebo', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+    body { direction: rtl; text-align: right; color: #222; font-size: 13px; padding: 40px; background: #fff; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 20px; border-bottom: 3px solid #1a237e; }
+    .company-name { font-size: 24px; font-weight: 700; color: #1a237e; }
+    .company-sub { font-size: 12px; color: #666; margin-top: 4px; }
+    .doc-title { text-align: left; }
+    .doc-title h2 { font-size: 20px; color: #1a237e; font-weight: 700; }
+    .doc-title .doc-num { font-size: 11px; color: #888; margin-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+    .info-box { background: #f7f8fc; border-radius: 8px; padding: 16px 20px; border-right: 4px solid #1a237e; }
+    .info-box h4 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .info-label { color: #666; font-size: 12px; }
+    .info-val { font-weight: 600; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    thead tr { background: #1a237e; color: #fff; }
+    thead th { padding: 10px 14px; font-size: 12px; font-weight: 600; text-align: right; }
+    tbody tr { border-bottom: 1px solid #eee; }
+    tbody tr:nth-child(even) { background: #f9f9f9; }
+    tbody td { padding: 10px 14px; font-size: 12px; vertical-align: middle; }
+    .totals-box { margin-right: auto; margin-left: 0; width: 260px; background: #f7f8fc; border-radius: 8px; padding: 16px 20px; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .total-row.final { font-size: 15px; font-weight: 700; color: #1a237e; border-top: 2px solid #1a237e; padding-top: 8px; margin-top: 4px; }
+    .notes-box { margin-top: 28px; background: #fffde7; border-radius: 8px; padding: 14px 18px; border-right: 4px solid #f9a825; }
+    .notes-box h4 { font-size: 11px; color: #888; margin-bottom: 6px; font-weight: 600; }
+    .notes-box p { font-size: 12px; color: #444; line-height: 1.6; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-new { background: #e3f2fd; color: #1565c0; }
+    .status-progress { background: #fff3e0; color: #e65100; }
+    .status-done { background: #e8f5e9; color: #2e7d32; }
+    .status-cancelled { background: #fce4ec; color: #c62828; }
+    .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: flex-end; }
+    .footer-left { font-size: 11px; color: #999; line-height: 1.6; }
+    .footer-sig { text-align: left; font-size: 11px; color: #666; }
+    .sig-line { border-bottom: 1px solid #ccc; width: 160px; height: 40px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <div class="company-name">א.ש מקלחונים מעוצבים</div>
+      <div class="company-sub">מערכת CRM | ניהול לקוחות והזמנות</div>
+    </div>
+    <div class="doc-title">
+      <h2>אישור הזמנה</h2>
+      <div class="doc-num">מס' {{ order.id[:8] }}</div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <h4>פרטי לקוח</h4>
+      <div class="info-row">
+        <span class="info-label">לקוח:</span>
+        <span class="info-val">{{ order.get('לקוח', ['—'])|join(', ') if order.get('לקוח') else '—' }}</span>
+      </div>
+      {% if order.get('כתובת') %}
+      <div class="info-row">
+        <span class="info-label">כתובת:</span>
+        <span class="info-val">{{ order.get('כתובת') }}</span>
+      </div>
+      {% endif %}
+      {% if order.get('טלפון') %}
+      <div class="info-row">
+        <span class="info-label">טלפון:</span>
+        <span class="info-val">{{ order.get('טלפון') }}</span>
+      </div>
+      {% endif %}
+    </div>
+    <div class="info-box">
+      <h4>פרטי הזמנה</h4>
+      <div class="info-row">
+        <span class="info-label">סטטוס:</span>
+        <span class="info-val">
+          {% set s = order.get('סטטוס', 'חדש') %}
+          <span class="status-badge {% if s in ['הושלם','אושרה'] %}status-done{% elif s == 'בוטל' %}status-cancelled{% elif s in ['בתהליך','בייצור'] %}status-progress{% else %}status-new{% endif %}">{{ s }}</span>
+        </span>
+      </div>
+      {% if order.get('תאריך יצירה') %}
+      <div class="info-row">
+        <span class="info-label">תאריך:</span>
+        <span class="info-val">{{ order.get('תאריך יצירה')[:10] }}</span>
+      </div>
+      {% endif %}
+      {% if order.get('תיאור') %}
+      <div class="info-row">
+        <span class="info-label">תיאור:</span>
+        <span class="info-val">{{ order.get('תיאור') }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Lines Table -->
+  {% if lines %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width:50%">פריט</th>
+        <th style="width:15%">כמות</th>
+        <th style="width:20%">מחיר יחידה (₪)</th>
+        <th style="width:15%">סה&quot;כ (₪)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set ns = namespace(grand_total=0) %}
+      {% for line in lines %}
+      {% set line_price = line.get('מחיר', 0) | float %}
+      {% set line_qty = line.get('כמות', 1) | int %}
+      {% set line_total = line.get('סה"כ', line_price * line_qty) | float %}
+      {% set ns.grand_total = ns.grand_total + line_total %}
+      <tr>
+        <td>{{ line.get('מוצר', line.get('שם', '—')) }}</td>
+        <td>{{ line_qty }}</td>
+        <td>{{ '%.2f' | format(line_price) }}</td>
+        <td><strong>{{ '%.2f' | format(line_total) }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div style="display:flex; justify-content:flex-start;">
+    <div class="totals-box">
+      <div class="total-row">
+        <span>סכום ביניים:</span>
+        <span>₪{{ '%.2f' | format(ns.grand_total) }}</span>
+      </div>
+      <div class="total-row">
+        <span>מע&quot;מ (18%):</span>
+        <span>₪{{ '%.2f' | format(ns.grand_total * 0.18) }}</span>
+      </div>
+      <div class="total-row final">
+        <span>סה&quot;כ לתשלום:</span>
+        <span>₪{{ '%.2f' | format(ns.grand_total * 1.18) }}</span>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div style="background:#f8f9fa;border-radius:8px;padding:20px;text-align:center;color:#888;margin-bottom:24px;">
+    אין פריטים בהזמנה זו
+  </div>
+  {% endif %}
+
+  {% if order.get('הערות') %}
+  <div class="notes-box">
+    <h4>הערות</h4>
+    <p>{{ order.get('הערות') }}</p>
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    <div class="footer-left">
+      מסמך זה הופק ממערכת CRM א.ש מקלחונים מעוצבים<br>
+      כל הזכויות שמורות | 2025
+    </div>
+    <div class="footer-sig">
+      <div class="sig-line"></div>
+      <div>חתימת אחראי / אישור</div>
+    </div>
+  </div>
+
+</body>
+</html>
