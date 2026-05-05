@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}עריכת הזמנה{% endblock %}
+{% block page_title %}<i class="bi bi-pencil me-2"></i>עריכת הזמנה #{{ order.get('מספר הזמנה', '') }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('order_detail', record_id=order.id) }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה להזמנה
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header fw-bold">
+        <i class="bi bi-pencil me-2"></i>עריכת פרטי הזמנה
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('order_edit', record_id=order.id) }}">
+
+          <!-- לקוח -->
+          <div class="mb-3">
+            <label class="form-label fw-600">לקוח</label>
+            <select name="customer_id" class="form-select">
+              <option value="">— ללא שינוי —</option>
+              {% for c in customers %}
+              {% set cust_ids = order.get('לקוחות', []) %}
+              <option value="{{ c.id }}"
+                {% if c.id in cust_ids or (cust_ids and c.id == cust_ids[0]) %}selected{% endif %}>
+                {{ c.get('שם לקוח', c.get('שם', c.id)) }}
+                {% if c.get('טלפון') %} | {{ c.get('טלפון') }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- מוצר -->
+          <div class="mb-3">
+            <label class="form-label fw-600">מוצר</label>
+            <select name="product_id" class="form-select">
+              <option value="">— ללא שינוי —</option>
+              {% for p in products %}
+              {% set prod_ids = order.get('שם מוצר', []) %}
+              <option value="{{ p.id }}"
+                {% if p.id in prod_ids or (prod_ids and p.id == prod_ids[0]) %}selected{% endif %}>
+                {{ p.get('שם מוצר מלא', p.get('מקט', p.id)) }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row g-3">
+            <!-- כמות -->
+            <div class="col-sm-4">
+              <label class="form-label fw-600">כמות</label>
+              <input type="number" name="quantity" class="form-control" min="1"
+                value="{{ order.get('כמות', '') }}">
+            </div>
+
+            <!-- מחיר -->
+            <div class="col-sm-4">
+              <label class="form-label fw-600">מחיר (₪)</label>
+              <input type="number" name="price" class="form-control" step="0.01" min="0"
+                value="{{ order.get('מחיר בשקלים', '') }}">
+            </div>
+
+            <!-- מהיכן יוצא המוצר -->
+            <div class="col-sm-4">
+              <label class="form-label fw-600">מהיכן יוצא המוצר</label>
+              <select name="source" class="form-select">
+                <option value="">— בחר —</option>
+                {% for s in ['מחסן','חנות','ספק','ייצור'] %}
+                <option value="{{ s }}" {% if order.get('מהיכן יוצא המוצר') == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- סטטוס -->
+          <div class="mb-3 mt-3">
+            <label class="form-label fw-600">סטטוס</label>
+            <select name="status" class="form-select">
+              {% for s in ['חדש','טיוטה','ממתינה לאישור','אושרה','בייצור','מוכנה','הותקנה','הושלם','בוטל'] %}
+              <option value="{{ s }}" {% if order.get('סטטוס') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- תיאור -->
+          <div class="mb-3">
+            <label class="form-label fw-600">תיאור / נושא</label>
+            <input type="text" name="description" class="form-control"
+              value="{{ order.get('תיאור', '') }}"
+              placeholder="תיאור קצר של ההזמנה">
+          </div>
+
+          <!-- הערות -->
+          <div class="mb-4">
+            <label class="form-label fw-600">הערות</label>
+            <textarea name="notes" class="form-control" rows="3"
+              placeholder="הערות נוספות...">{{ order.get('הערות', '') }}</textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning">
+              <i class="bi bi-check-lg me-1"></i>שמור שינויים
+            </button>
+            <a href="{{ url_for('order_detail', record_id=order.id) }}" class="btn btn-outline-secondary">ביטול</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

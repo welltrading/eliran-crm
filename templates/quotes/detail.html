@@ -3,90 +3,185 @@
 {% block page_title %}<i class="bi bi-file-earmark-text me-2"></i>פרטי הצעת מחיר{% endblock %}
 
 {% block topbar_actions %}
+  <a href="{{ url_for('quote_edit', record_id=quote.id) }}" class="btn btn-warning btn-sm">
+    <i class="bi bi-pencil me-1"></i>עריכה
+  </a>
+  {% if quote.get('סטטוס') != 'הומרה להזמנה' %}
+  <a href="{{ url_for('quote_convert_to_order', record_id=quote.id) }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-arrow-left-right me-1"></i>המר להזמנה
+  </a>
+  {% endif %}
   <a href="{{ url_for('quote_pdf', record_id=quote.id) }}" class="btn btn-danger btn-sm" target="_blank">
     <i class="bi bi-file-earmark-pdf me-1"></i>הורד PDF
   </a>
   <a href="{{ url_for('quotes_list') }}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-right me-1"></i>חזרה
   </a>
+  <form method="POST" action="{{ url_for('quote_delete', record_id=quote.id) }}" class="d-inline"
+        onsubmit="return confirm('האם למחוק את ההצעה לצמיתות? לא ניתן לשחזר.')">
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>מחק
+    </button>
+  </form>
 {% endblock %}
 
 {% block content %}
 <div class="row g-3">
-  <div class="col-lg-5">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-file-earmark-text me-2"></i>פרטי הצעה</span>
-        <a href="{{ url_for('quote_pdf', record_id=quote.id) }}" class="btn btn-danger btn-sm" target="_blank">
-          <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-        </a>
+
+  <!-- עמודה ראשונה: לקוח + סטטוס -->
+  <div class="col-lg-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-bold">
+        <i class="bi bi-person me-2"></i>פרטי לקוח
       </div>
       <div class="card-body">
-        <ul class="list-unstyled">
-          <li class="mb-3">
-            <small class="text-muted d-block">מזהה</small>
-            <code class="small">{{ quote.id }}</code>
-          </li>
-          {% if quote.get('שם לקוח') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">שם לקוח</small>
-            <strong>{{ quote.get('שם לקוח') }}</strong>
-          </li>
-          {% endif %}
-          {% if quote.get('טלפון') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">טלפון</small>
-            <span>{{ quote.get('טלפון') }}</span>
-          </li>
-          {% endif %}
-          {% if quote.get('כתובת') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">כתובת</small>
-            <span>{{ quote.get('כתובת') }}</span>
-          </li>
-          {% endif %}
-          <li class="mb-3">
-            <small class="text-muted d-block">סטטוס</small>
-            {% set s = quote.get('סטטוס', '') %}
-            <span class="badge {% if s == 'אושרה' %}status-done{% elif s == 'נדחתה' %}status-cancelled{% elif s == 'נשלחה' %}status-progress{% else %}status-new{% endif %} fs-6">{{ s or 'טיוטה' }}</span>
-          </li>
-          {% if quote.get('סטנדרטי/ייצור אישי') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">סוג</small>
-            <span>{{ quote.get('סטנדרטי/ייצור אישי') }}</span>
-          </li>
-          {% endif %}
-          {% if quote.get('כמות') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">כמות</small>
-            <span>{{ quote.get('כמות') }}</span>
-          </li>
-          {% endif %}
-          {% if quote.get('מחיר בשקלים') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">מחיר</small>
-            <span class="fw-bold fs-5 text-success">₪{{ quote.get('מחיר בשקלים') }}</span>
-          </li>
-          {% endif %}
-          {% if quote.get('הערות') %}
-          <li class="mb-3">
-            <small class="text-muted d-block">הערות</small>
-            <span>{{ quote.get('הערות') }}</span>
-          </li>
-          {% endif %}
-        </ul>
-        <hr>
-        <h6 class="text-muted mb-3">כל השדות</h6>
-        {% for key, val in quote.items() %}
-        {% if key != 'id' %}
-        <div class="mb-2">
-          <small class="text-muted">{{ key }}</small>
-          <div>{{ val if val is string else val|join(', ') if val is iterable else val }}</div>
+        {% if quote.get('שם לקוח') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">שם לקוח</small>
+          <strong class="fs-5">{{ quote.get('שם לקוח') }}</strong>
         </div>
         {% endif %}
-        {% endfor %}
+        {% if quote.get('טלפון') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">טלפון</small>
+          <span><i class="bi bi-telephone me-1"></i>{{ quote.get('טלפון') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('כתובת') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">כתובת</small>
+          <span><i class="bi bi-geo-alt me-1"></i>{{ quote.get('כתובת') }}</span>
+        </div>
+        {% endif %}
+        <div class="mb-3">
+          <small class="text-muted d-block">סטטוס</small>
+          {% set s = quote.get('סטטוס', '') %}
+          <span class="badge {% if s == 'אושרה' %}status-done{% elif s == 'נדחתה' %}status-cancelled{% elif s == 'נשלחה' %}status-progress{% elif s == 'הומרה להזמנה' %}bg-success{% else %}status-new{% endif %} fs-6">{{ s or 'טיוטה' }}</span>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- עמודה שניה: מוצר + מחיר -->
+  <div class="col-lg-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-bold">
+        <i class="bi bi-box-seam me-2"></i>פרטי מוצר
+      </div>
+      <div class="card-body">
+        {% if quote.get('סטנדרטי/ייצור אישי') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">סוג</small>
+          <span>{{ quote.get('סטנדרטי/ייצור אישי') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('כמות') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">כמות</small>
+          <span>{{ quote.get('כמות') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('מחיר בשקלים') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">מחיר</small>
+          <span class="fw-bold fs-4 text-success">₪{{ quote.get('מחיר בשקלים') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('תשלום מלא/מקדמה') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">סוג תשלום</small>
+          <span>{{ quote.get('תשלום מלא/מקדמה') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('אמצעי תשלום') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">אמצעי תשלום</small>
+          <span>{{ quote.get('אמצעי תשלום') }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- עמודה שלישית: מידות + מפרט -->
+  <div class="col-lg-4 col-md-12">
+    <div class="card h-100">
+      <div class="card-header fw-bold">
+        <i class="bi bi-rulers me-2"></i>מידות ומפרט
+      </div>
+      <div class="card-body">
+        {% if quote.get('מידות לקוח רוחב') or quote.get('מידות לקוח עומק') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">מידות (רוחב × עומק)</small>
+          <span class="fw-bold text-info">{{ quote.get('מידות לקוח רוחב', '?') }} × {{ quote.get('מידות לקוח עומק', '?') }} ס"מ</span>
+        </div>
+        {% endif %}
+        {% if quote.get('גובה מקלחון (מטר)') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">גובה מקלחון</small>
+          <span>{{ quote.get('גובה מקלחון (מטר)') }} מ'</span>
+        </div>
+        {% endif %}
+        {% if quote.get('זכוכית') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">זכוכית</small>
+          <span>{{ quote.get('זכוכית') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('צבע פרזול') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">צבע פרזול</small>
+          <span>{{ quote.get('צבע פרזול') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('אפשרות פירוק') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">אפשרות פירוק</small>
+          <span>{{ quote.get('אפשרות פירוק') }}</span>
+        </div>
+        {% endif %}
+        {% if quote.get('הערות') %}
+        <div class="mb-3">
+          <small class="text-muted d-block">הערות</small>
+          <span>{{ quote.get('הערות') }}</span>
+        </div>
+        {% endif %}
+        {% if not (quote.get('מידות לקוח רוחב') or quote.get('מידות לקוח עומק') or quote.get('גובה מקלחון (מטר)') or quote.get('זכוכית') or quote.get('צבע פרזול') or quote.get('אפשרות פירוק') or quote.get('הערות')) %}
+        <p class="text-muted small">אין נתוני מפרט</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF + PDF button row -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-pdf me-2 text-danger"></i>מסמך הצעת מחיר</span>
+        <a href="{{ url_for('quote_pdf', record_id=quote.id) }}" class="btn btn-danger btn-sm" target="_blank">
+          <i class="bi bi-file-earmark-pdf me-1"></i>פתח PDF
+        </a>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for key, val in quote.items() %}
+          {% if key not in ['id', 'שם לקוח', 'טלפון', 'כתובת', 'סטטוס', 'סטנדרטי/ייצור אישי', 'כמות', 'מחיר בשקלים',
+                            'תשלום מלא/מקדמה', 'אמצעי תשלום', 'מידות לקוח רוחב', 'מידות לקוח עומק',
+                            'גובה מקלחון (מטר)', 'זכוכית', 'צבע פרזול', 'אפשרות פירוק', 'הערות'] %}
+          <div class="col-md-4 col-sm-6">
+            <small class="text-muted">{{ key }}</small>
+            <div class="text-truncate">{{ val if val is string else val|join(', ') if val is iterable else val }}</div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="mt-3 pt-2 border-top">
+          <small class="text-muted">מזהה רשומה</small>
+          <div><code class="small text-muted">{{ quote.id }}</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

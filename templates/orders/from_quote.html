@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}המרה להזמנה{% endblock %}
+{% block page_title %}<i class="bi bi-arrow-left-right me-2"></i>המרת הצעת מחיר להזמנה{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('quote_detail', record_id=quote.id) }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה להצעה
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <!-- כרטיס מקור: פרטי ההצעה -->
+    <div class="card border-primary mb-3">
+      <div class="card-header bg-primary bg-opacity-10 text-primary fw-bold">
+        <i class="bi bi-file-earmark-text me-2"></i>פרטי הצעת המחיר המקורית
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-sm-4">
+            <small class="text-muted d-block">שם לקוח</small>
+            <strong>{{ quote.get('שם לקוח', '—') }}</strong>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">טלפון</small>
+            <span>{{ quote.get('טלפון', '—') }}</span>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">כתובת</small>
+            <span>{{ quote.get('כתובת', '—') }}</span>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">מוצר</small>
+            <span>{{ quote.get('מוצרים לטופס', quote.get('שם מוצר מלא', '—')) }}</span>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">כמות</small>
+            <span>{{ quote.get('כמות', '—') }}</span>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">מחיר</small>
+            <span class="text-success fw-bold">{% if quote.get('מחיר בשקלים') %}₪{{ quote.get('מחיר בשקלים') }}{% else %}—{% endif %}</span>
+          </div>
+
+          {# מידות #}
+          {% if quote.get('מידות לקוח רוחב') or quote.get('מידות לקוח עומק') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">מידות (רוחב × עומק)</small>
+            <span class="fw-bold text-info">
+              {{ quote.get('מידות לקוח רוחב', '?') }} × {{ quote.get('מידות לקוח עומק', '?') }} ס"מ
+            </span>
+          </div>
+          {% endif %}
+          {% if quote.get('גובה מקלחון (מטר)') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">גובה מקלחון</small>
+            <span>{{ quote.get('גובה מקלחון (מטר)') }} מ'</span>
+          </div>
+          {% endif %}
+          {% if quote.get('זכוכית') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">זכוכית</small>
+            <span>{{ quote.get('זכוכית') }}</span>
+          </div>
+          {% endif %}
+          {% if quote.get('צבע פרזול') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">צבע פרזול</small>
+            <span>{{ quote.get('צבע פרזול') }}</span>
+          </div>
+          {% endif %}
+          {% if quote.get('סטנדרטי/ייצור אישי') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">סוג</small>
+            <span>{{ quote.get('סטנדרטי/ייצור אישי') }}</span>
+          </div>
+          {% endif %}
+          {% if quote.get('אפשרות פירוק') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">פירוק</small>
+            <span>{{ quote.get('אפשרות פירוק') }}</span>
+          </div>
+          {% endif %}
+          {% if quote.get('תשלום מלא/מקדמה') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">סוג תשלום</small>
+            <span>{{ quote.get('תשלום מלא/מקדמה') }}</span>
+          </div>
+          {% endif %}
+          {% if quote.get('אמצעי תשלום') %}
+          <div class="col-sm-4">
+            <small class="text-muted d-block">אמצעי תשלום</small>
+            <span>{{ quote.get('אמצעי תשלום') }}</span>
+          </div>
+          {% endif %}
+          {% if quote.get('הערות') %}
+          <div class="col-12">
+            <small class="text-muted d-block">הערות מהצעה</small>
+            <span>{{ quote.get('הערות') }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- טופס ההזמנה -->
+    <div class="card">
+      <div class="card-header fw-bold">
+        <i class="bi bi-cart-plus me-2"></i>פרטי ההזמנה החדשה
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('quote_convert_to_order', record_id=quote.id) }}">
+
+          <!-- לקוח -->
+          <div class="mb-3">
+            <label class="form-label fw-600">לקוח</label>
+            {% if prefill_customer_id %}
+              <input type="hidden" name="customer_id" value="{{ prefill_customer_id }}">
+              <div class="form-control bg-light d-flex align-items-center gap-2">
+                <i class="bi bi-person-check-fill text-success"></i>
+                <strong>{{ prefill_customer_name }}</strong>
+                <small class="text-muted me-auto">— לקוח קיים, יקושר אוטומטית</small>
+              </div>
+            {% else %}
+              <input type="hidden" name="customer_id" value="">
+              <div class="form-control bg-light d-flex align-items-center gap-2 text-warning">
+                <i class="bi bi-person-plus-fill"></i>
+                <span>לקוח חדש ייווצר אוטומטית מפרטי ההצעה ({{ quote.get('שם לקוח','') }})</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- מוצר -->
+          <div class="mb-3">
+            <label class="form-label fw-600">מוצר</label>
+            <select name="product_id" class="form-select">
+              <option value="">— ללא מוצר מקושר —</option>
+              {% for p in products %}
+              <option value="{{ p.id }}" {% if p.id == prefill_product_id %}selected{% endif %}>
+                {{ p.get('שם מוצר מלא', p.get('מקט', p.id)) }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row g-3">
+            <!-- כמות -->
+            <div class="col-sm-4">
+              <label class="form-label fw-600">כמות</label>
+              <input type="number" name="quantity" class="form-control" min="1"
+                value="{{ quote.get('כמות', '') }}">
+            </div>
+
+            <!-- מחיר -->
+            <div class="col-sm-4">
+              <label class="form-label fw-600">מחיר (₪)</label>
+              <input type="number" name="price" class="form-control" step="0.01" min="0"
+                value="{{ quote.get('מחיר בשקלים', '') }}">
+            </div>
+
+            <!-- מהיכן יוצא המוצר -->
+            <div class="col-sm-4">
+              <label class="form-label fw-600">מהיכן יוצא המוצר</label>
+              <select name="source" class="form-select">
+                <option value="">— בחר —</option>
+                <option value="מחסן">מחסן</option>
+                <option value="חנות">חנות</option>
+                <option value="ספק">ספק</option>
+                <option value="ייצור">ייצור</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- סטטוס -->
+          <div class="mb-3 mt-3">
+            <label class="form-label fw-600">סטטוס ראשוני</label>
+            <select name="status" class="form-select">
+              {% for s in ['חדש','טיוטה','ממתינה לאישור','אושרה','בייצור','מוכנה'] %}
+              <option value="{{ s }}" {% if s == 'חדש' %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- הערות — מאוכלס אוטומטית עם כל פרטי ההצעה -->
+          <div class="mb-4">
+            <label class="form-label fw-600">הערות <small class="text-muted fw-normal">(כולל מפרט מההצעה)</small></label>
+            <textarea name="notes" class="form-control" rows="6">{% set specs = [] %}
+{% if quote.get('מידות לקוח רוחב') or quote.get('מידות לקוח עומק') %}{% set _ = specs.append('מידות: רוחב ' ~ quote.get('מידות לקוח רוחב','?') ~ ' × עומק ' ~ quote.get('מידות לקוח עומק','?') ~ ' ס"מ') %}{% endif %}
+{% if quote.get('גובה מקלחון (מטר)') %}{% set _ = specs.append('גובה: ' ~ quote.get('גובה מקלחון (מטר)') ~ ' מ\'') %}{% endif %}
+{% if quote.get('זכוכית') %}{% set _ = specs.append('זכוכית: ' ~ quote.get('זכוכית')) %}{% endif %}
+{% if quote.get('צבע פרזול') %}{% set _ = specs.append('פרזול: ' ~ quote.get('צבע פרזול')) %}{% endif %}
+{% if quote.get('סטנדרטי/ייצור אישי') %}{% set _ = specs.append('סוג: ' ~ quote.get('סטנדרטי/ייצור אישי')) %}{% endif %}
+{% if quote.get('אפשרות פירוק') %}{% set _ = specs.append('פירוק: ' ~ quote.get('אפשרות פירוק')) %}{% endif %}
+{% if quote.get('תשלום מלא/מקדמה') %}{% set _ = specs.append('תשלום: ' ~ quote.get('תשלום מלא/מקדמה')) %}{% endif %}
+{% if quote.get('אמצעי תשלום') %}{% set _ = specs.append('אמצעי תשלום: ' ~ quote.get('אמצעי תשלום')) %}{% endif %}
+{{ specs | join(' | ') }}{% if quote.get('הערות') %}
+{{ quote.get('הערות') }}{% endif %}</textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-check-lg me-1"></i>צור הזמנה
+            </button>
+            <a href="{{ url_for('quote_detail', record_id=quote.id) }}" class="btn btn-outline-secondary btn-lg">ביטול</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

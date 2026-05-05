@@ -3,172 +3,250 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
     * { font-family: 'Heebo', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-    body { direction: rtl; text-align: right; color: #222; font-size: 13px; padding: 40px; background: #fff; }
+    body { direction: rtl; text-align: right; color: #111; font-size: 13px; padding: 32px 36px; background: #fff; }
 
-    /* Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 20px; border-bottom: 3px solid #1a237e; }
-    .company-name { font-size: 24px; font-weight: 700; color: #1a237e; }
-    .company-sub { font-size: 12px; color: #666; margin-top: 4px; }
-    .doc-title { text-align: left; }
-    .doc-title h2 { font-size: 20px; color: #1a237e; font-weight: 700; }
-    .doc-title .doc-num { font-size: 11px; color: #888; margin-top: 4px; }
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #ccc;
+    }
+    .company-info { text-align: right; }
+    .company-name { font-size: 22px; font-weight: 800; color: #111; margin-bottom: 4px; }
+    .company-detail { font-size: 11.5px; color: #333; line-height: 1.7; }
+    .company-detail a { color: #1a6bbf; text-decoration: none; }
+    .company-logo {
+      width: 80px; height: 80px;
+      border: 1px solid #ddd;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .company-logo svg { width: 80px; height: 80px; }
 
-    /* Info grid */
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
-    .info-box { background: #f7f8fc; border-radius: 8px; padding: 16px 20px; border-right: 4px solid #1a237e; }
-    .info-box h4 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
-    .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .info-label { color: #666; font-size: 12px; }
-    .info-val { font-weight: 600; font-size: 12px; }
+    /* ── Customer / Doc row ── */
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #ccc;
+    }
+    .customer-block { text-align: right; }
+    .customer-block .label { font-weight: 700; font-size: 13px; }
+    .customer-block .val { font-size: 12.5px; margin-top: 3px; line-height: 1.7; }
+    .doc-block { text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .copy-label {
+      border: 1px solid #888;
+      padding: 2px 10px;
+      font-size: 12px;
+      color: #444;
+      font-weight: 600;
+    }
+    .doc-date { font-size: 12px; color: #333; }
+    .doc-sub { font-size: 11px; color: #777; }
+    .stamp {
+      width: 68px; height: 68px;
+      border: 3px solid #888;
+      border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #666;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 4px;
+      padding: 6px;
+      line-height: 1.4;
+    }
+    .stamp .stamp-main { font-size: 10px; font-weight: 800; color: #555; }
 
-    /* Table */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    thead tr { background: #1a237e; color: #fff; }
-    thead th { padding: 10px 14px; font-size: 12px; font-weight: 600; text-align: right; }
-    tbody tr { border-bottom: 1px solid #eee; }
-    tbody tr:nth-child(even) { background: #f9f9f9; }
-    tbody td { padding: 10px 14px; font-size: 12px; vertical-align: middle; }
+    /* ── Title ── */
+    .doc-title {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .doc-title h1 { font-size: 20px; font-weight: 800; color: #111; }
+    .doc-title .subtitle { font-size: 13px; color: #444; margin-top: 3px; }
 
-    /* Totals */
-    .totals-box { margin-right: auto; margin-left: 0; width: 260px; background: #f7f8fc; border-radius: 8px; padding: 16px 20px; }
-    .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-    .total-row.final { font-size: 15px; font-weight: 700; color: #1a237e; border-top: 2px solid #1a237e; padding-top: 8px; margin-top: 4px; }
+    /* ── Table ── */
+    .section-heading { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead tr { background: #c8a000; color: #fff; }
+    thead th {
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: right;
+      border: 1px solid #b08e00;
+    }
+    tbody tr { border-bottom: 1px solid #e0e0e0; }
+    tbody td {
+      padding: 9px 12px;
+      font-size: 12.5px;
+      vertical-align: middle;
+      border: 1px solid #e0e0e0;
+      text-align: right;
+    }
+    .td-num { text-align: center; }
+    .td-price { text-align: left; direction: ltr; }
+    .product-sub { font-size: 11px; color: #666; margin-top: 3px; }
 
-    /* Notes */
-    .notes-box { margin-top: 28px; background: #fffde7; border-radius: 8px; padding: 14px 18px; border-right: 4px solid #f9a825; }
-    .notes-box h4 { font-size: 11px; color: #888; margin-bottom: 6px; font-weight: 600; }
-    .notes-box p { font-size: 12px; color: #444; line-height: 1.6; }
+    /* ── Totals ── */
+    .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+    .totals-table { width: 260px; }
+    .totals-table tr td { padding: 5px 8px; font-size: 13px; border: none; }
+    .totals-table tr td:last-child { text-align: left; direction: ltr; font-weight: 600; }
+    .totals-table .final-row td { font-size: 15px; font-weight: 800; padding-top: 8px; border-top: 2px solid #111; }
 
-    /* Status badge */
-    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .status-draft { background: #e3f2fd; color: #1565c0; }
-    .status-approved { background: #e8f5e9; color: #2e7d32; }
-    .status-rejected { background: #fce4ec; color: #c62828; }
-    .status-sent { background: #fff3e0; color: #e65100; }
+    /* ── Notes ── */
+    .notes-section { margin-top: 12px; margin-bottom: 20px; }
+    .notes-section .notes-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .notes-section p { font-size: 12px; color: #222; line-height: 1.75; }
 
-    /* Footer */
-    .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-    .footer-left { font-size: 11px; color: #999; }
-    .footer-sig { text-align: left; font-size: 11px; color: #666; }
-    .sig-line { border-bottom: 1px solid #ccc; width: 160px; height: 40px; margin-bottom: 4px; }
+    /* ── Footer ── */
+    .footer-section { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 16px; }
+    .footer-section p { font-size: 11.5px; color: #333; line-height: 1.75; margin-bottom: 6px; }
+    .sig-row { margin-top: 24px; text-align: right; }
+    .sig-row .sig-label { font-size: 13px; font-weight: 700; margin-bottom: 28px; }
+    .sig-line { border-bottom: 1px solid #333; width: 200px; height: 1px; margin-top: 28px; }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
+  <!-- ── Header ── -->
   <div class="header">
-    <div>
+    <div class="company-logo">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="לוגו" style="width:80px; height:80px; object-fit:contain;">
+    </div>
+    <div class="company-info">
       <div class="company-name">א.ש מקלחונים מעוצבים</div>
-      <div class="company-sub">מערכת CRM | ניהול לקוחות והזמנות</div>
-    </div>
-    <div class="doc-title">
-      <h2>הצעת מחיר</h2>
-      <div class="doc-num">מס' {{ quote.id[:8] }}</div>
+      <div class="company-detail">
+        מקלחונים מעוצבים וזגנות בהתאמה אישית<br>
+        עוסק מורשה מס: 036682441<br>
+        המצודה 3, אזור<br>
+        טל: 0547339435, 0507954500<br>
+        <a href="https://showerdoorsdesign.co.il">https://showerdoorsdesign.co.il</a>
+      </div>
     </div>
   </div>
 
-  <!-- Info Grid -->
-  <div class="info-grid">
-    <div class="info-box">
-      <h4>פרטי לקוח</h4>
-      <div class="info-row">
-        <span class="info-label">שם:</span>
-        <span class="info-val">{{ quote.get('שם לקוח', '—') }}</span>
+  <!-- ── Customer + Doc meta ── -->
+  <div class="meta-row">
+    <div class="doc-block">
+      <div class="copy-label">[העתק נאמן למקור]</div>
+      <div class="doc-date">תאריך: {{ quote.get('תאריך יצירה', '')[:10] if quote.get('תאריך יצירה') else '' }}</div>
+      <div class="doc-sub">מסמך ממוחשב, חתום דיגיטלית</div>
+      <div class="stamp">
+        <span class="stamp-main">VERIFIED</span>
+        <span>GOOD DOCS</span>
+        <span>מאושר</span>
       </div>
-      {% if quote.get('טלפון') %}
-      <div class="info-row">
-        <span class="info-label">טלפון:</span>
-        <span class="info-val">{{ quote.get('טלפון') }}</span>
-      </div>
-      {% endif %}
+    </div>
+    <div class="customer-block">
+      <div class="label">לכבוד: {{ quote.get('שם לקוח', '—') }}</div>
       {% if quote.get('כתובת') %}
-      <div class="info-row">
-        <span class="info-label">כתובת:</span>
-        <span class="info-val">{{ quote.get('כתובת') }}</span>
-      </div>
+      <div class="val">כתובת: {{ quote.get('כתובת') }}</div>
       {% endif %}
-    </div>
-    <div class="info-box">
-      <h4>פרטי הצעה</h4>
-      <div class="info-row">
-        <span class="info-label">סטטוס:</span>
-        <span class="info-val">
-          {% set s = quote.get('סטטוס', 'טיוטה') %}
-          <span class="status-badge {% if s == 'אושרה' %}status-approved{% elif s == 'נדחתה' %}status-rejected{% elif s == 'נשלחה' %}status-sent{% else %}status-draft{% endif %}">{{ s }}</span>
-        </span>
-      </div>
-      {% if quote.get('סטנדרטי/ייצור אישי') %}
-      <div class="info-row">
-        <span class="info-label">סוג:</span>
-        <span class="info-val">{{ quote.get('סטנדרטי/ייצור אישי') }}</span>
-      </div>
+      {% if quote.get('טלפון') %}
+      <div class="val">טלפון: {{ quote.get('טלפון') }}</div>
       {% endif %}
-      <div class="info-row">
-        <span class="info-label">תאריך:</span>
-        <span class="info-val">{{ quote.get('תאריך יצירה', '')[:10] if quote.get('תאריך יצירה') else '—' }}</span>
-      </div>
     </div>
   </div>
 
-  <!-- Product Table -->
+  <!-- ── Document Title ── -->
+  <div class="doc-title">
+    <h1>הצעת מחיר מספר {{ quote.get('Name', quote.get('מספר הצעה', '')) }}</h1>
+    {% if quote.get('סטנדרטי/ייצור אישי') %}
+    <div class="subtitle">{{ quote.get('סטנדרטי/ייצור אישי') }}</div>
+    {% endif %}
+  </div>
+
+  <!-- ── Items Table ── -->
+  <div class="section-heading">פריטים:</div>
+  {% set price = quote.get('מחיר בשקלים', 0) | float %}
+  {% set qty = quote.get('כמות', 1) | float %}
+  {% set subtotal = price * qty %}
+  {% set vat = subtotal * 0.18 %}
+  {% set total = subtotal * 1.18 %}
   <table>
     <thead>
       <tr>
-        <th style="width:50%">מוצר / שירות</th>
-        <th style="width:15%">כמות</th>
-        <th style="width:20%">מחיר יחידה (₪)</th>
-        <th style="width:15%">סה&quot;כ (₪)</th>
+        <th style="width:52%">פירוט</th>
+        <th style="width:13%; text-align:center">כמות</th>
+        <th style="width:18%; text-align:left; direction:ltr">מחיר</th>
+        <th style="width:17%; text-align:left; direction:ltr">סכום</th>
       </tr>
     </thead>
     <tbody>
-      {% set price = quote.get('מחיר בשקלים', 0) | float %}
-      {% set qty = quote.get('כמות', 1) | int %}
       <tr>
-        <td><strong>{{ quote.get('שם מוצר', quote.get('מוצרים', ['—'])[0] if quote.get('מוצרים') else '—') }}</strong></td>
-        <td>{{ qty }}</td>
-        <td>{{ '%.2f' | format(price) }}</td>
-        <td><strong>{{ '%.2f' | format(price * qty) }}</strong></td>
+        <td>
+          <strong>{{ quote.get('שם מוצר', '—') }}</strong>
+          {% if quote.get('מידות לקוח רוחב') or quote.get('מידות לקוח עומק') or quote.get('גובה מקלחון (מטר)') %}
+          <div class="product-sub">
+            {% if quote.get('מידות לקוח רוחב') %}רוחב: {{ quote.get('מידות לקוח רוחב') }} {% endif %}
+            {% if quote.get('מידות לקוח עומק') %}עומק: {{ quote.get('מידות לקוח עומק') }} {% endif %}
+            {% if quote.get('גובה מקלחון (מטר)') %}גובה: {{ quote.get('גובה מקלחון (מטר)') }}{% endif %}
+          </div>
+          {% endif %}
+          <div class="product-sub">כולל הובלה והתקנה</div>
+        </td>
+        <td class="td-num">{{ '%.2f' | format(qty) }}</td>
+        <td class="td-price">&#8362;{{ '{:,.2f}'.format(price) }}</td>
+        <td class="td-price">&#8362;{{ '{:,.2f}'.format(subtotal) }}</td>
       </tr>
     </tbody>
   </table>
 
-  <!-- Totals -->
-  <div style="display:flex; justify-content:flex-start;">
-    <div class="totals-box">
-      <div class="total-row">
-        <span>סכום ביניים:</span>
-        <span>₪{{ '%.2f' | format(price * qty) }}</span>
-      </div>
-      <div class="total-row">
-        <span>מע&quot;מ (18%):</span>
-        <span>₪{{ '%.2f' | format(price * qty * 0.18) }}</span>
-      </div>
-      <div class="total-row final">
-        <span>סה&quot;כ לתשלום:</span>
-        <span>₪{{ '%.2f' | format(price * qty * 1.18) }}</span>
-      </div>
-    </div>
+  <!-- ── Totals ── -->
+  <div class="totals-wrap">
+    <table class="totals-table">
+      <tr>
+        <td>סה&quot;כ חייב במע&quot;מ:</td>
+        <td>&#8362;{{ '{:,.2f}'.format(subtotal) }}</td>
+      </tr>
+      <tr>
+        <td>מע&quot;מ 18.00%:</td>
+        <td>&#8362;{{ '{:,.2f}'.format(vat) }}</td>
+      </tr>
+      <tr class="final-row">
+        <td>סה&quot;כ:</td>
+        <td>&#8362;{{ '{:,.2f}'.format(total) }}</td>
+      </tr>
+    </table>
   </div>
 
-  <!-- Notes -->
-  {% if quote.get('הערות') %}
-  <div class="notes-box">
-    <h4>הערות</h4>
+  <!-- ── Notes ── -->
+  <div class="notes-section">
+    <div class="notes-title">הערה מצורפת:</div>
+    {% if quote.get('הערות') %}
     <p>{{ quote.get('הערות') }}</p>
+    {% else %}
+    <p>
+      לאחר פגישה של מידות לביצוע ולאחר אישור הלקוח להזמנת המקלחון לא ניתן לשנות את אריחי הקרמיקה, שינוי באמבטיה כזה או אחר מוביל למידות ביצוע שונות.<br>
+      במקרה שהשטח המידות שתנה לאחר מידות הלקוח ישלם את עלות הזכוכית ליצור חדש.
+    </p>
+    {% endif %}
   </div>
-  {% endif %}
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      הצעת מחיר זו תקפה ל-30 יום ממועד הפקתה<br>
-      א.ש מקלחונים מעוצבים | כל הזכויות שמורות
-    </div>
-    <div class="footer-sig">
+  <!-- ── Footer ── -->
+  <div class="footer-section">
+    <p>תודה שבחרת בחברת א.ש מקלחונים מעוצבים. אנו מתחייבים לתת מוצרים ושירות ברמה הגבוהה ביותר. יש להמתין 24 שעות לאחר ההתקנה לפני שימוש ראשוני על המוצר.</p>
+    <p>האחריות לא כוללת שבר זכוכית, ומנע כל שימוש.</p>
+    <p>הוראות ניקוי - למקלחון יש להשתמש במטלית יבשה לאחר כל שימוש, פעולה זו תמנע הצטברות של אבנית וכלכלור.<br>
+    אין להשתמש בחומרי ניקוי כימיים, חומרים אלו יגרמו לנזק בלתי הפיך לחלקי המקלחון.<br>
+    להסרת אבנית יש לסרות את האזור בחומץ ביתי 5% למשך 20 דק׳ ולשטוף היטב במים. &nbsp; תתחדשו</p>
+    <div class="sig-row">
+      <div class="sig-label">חתימה:</div>
       <div class="sig-line"></div>
-      <div>חתימת לקוח ואישור</div>
     </div>
   </div>
 

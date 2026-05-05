@@ -13,7 +13,7 @@
   <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <span><i class="bi bi-cart me-2"></i>כל ההזמנות ({{ orders|length }})</span>
     <div class="d-flex gap-2 flex-wrap">
-      {% set statuses = ['', 'טיוטה', 'ממתינה לאישור', 'אושרה', 'בייצור', 'מוכנה', 'הותקנה', 'הושלם', 'בוטל'] %}
+      {% set statuses = ['', 'חדש', 'טיוטה', 'ממתינה לאישור', 'אושרה', 'בייצור', 'מוכנה', 'הותקנה', 'הושלם', 'בוטל'] %}
       {% for s in statuses %}
         <a href="{{ url_for('orders_list') }}{% if s %}?status={{ s }}{% endif %}"
            class="btn btn-sm {% if status_filter == s %}btn-primary{% else %}btn-outline-secondary{% endif %}">
@@ -26,33 +26,59 @@
     {% if orders %}
     <div class="table-responsive">
       <table class="table table-hover mb-0">
-        <thead>
+        <thead class="table-light">
           <tr>
-            <th>#</th>
-            <th>לקוח</th>
-            <th>תיאור</th>
-            <th>סטטוס</th>
-            <th>תאריך</th>
-            <th></th>
+            <th style="width:80px">#</th>
+            <th>שם לקוח</th>
+            <th>טלפון</th>
+            <th>מוצר</th>
+            <th style="width:70px">כמות</th>
+            <th style="width:120px">סטטוס</th>
+            <th style="width:100px">תאריך</th>
+            <th style="width:80px"></th>
           </tr>
         </thead>
         <tbody>
           {% for o in orders %}
-          <tr onclick="window.location='{{ url_for('order_detail', record_id=o.id) }}'">
-            <td><span class="text-muted small font-monospace">{{ o.id[:6] }}</span></td>
+          {% set s = o.get('סטטוס', '') %}
+          {% set cancelled = o.get('הזמנה בוטלה', false) %}
+          <tr onclick="window.location='{{ url_for('order_detail', record_id=o.id) }}'" style="cursor:pointer{% if cancelled %}; opacity:0.55{% endif %}">
             <td>
-              {% if o.get('לקוח') %}
-                <strong>{{ o.get('לקוח')[0] if o.get('לקוח') is iterable else o.get('לקוח') }}</strong>
-              {% else %}—{% endif %}
+              <span class="fw-bold text-primary">{{ o.get('מספר הזמנה', '—') }}</span>
             </td>
-            <td>{{ o.get('תיאור', o.get('שם', '—'))[:50] }}</td>
+            <td><strong>{{ o.get('_שם לקוח', '—') }}</strong></td>
+            <td class="text-muted small">{{ o.get('_טלפון', '—') }}</td>
+            <td class="small">
+              {% set model = o.get('דגם (from שם מוצר)') %}
+              {% if model %}
+                {% if model is iterable and model is not string %}
+                  {{ model | join(', ') }}
+                {% else %}
+                  {{ model }}
+                {% endif %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">{{ o.get('כמות', '—') }}</td>
             <td>
-              {% set s = o.get('סטטוס', '') %}
-              <span class="badge {% if s in ['הושלם','אושרה'] %}status-done{% elif s == 'בוטל' %}status-cancelled{% elif s in ['בתהליך','בייצור','בטיפול'] %}status-progress{% elif s == 'ממתינה לאישור' %}status-pending{% else %}status-new{% endif %}">{{ s or 'חדש' }}</span>
+              {% if cancelled %}
+                <span class="badge status-cancelled">בוטל</span>
+              {% else %}
+                <span class="badge {% if s in ['הושלם','אושרה'] %}status-done{% elif s == 'בוטל' %}status-cancelled{% elif s in ['בייצור','בתהליך','מוכנה','הותקנה'] %}status-progress{% elif s == 'ממתינה לאישור' %}status-pending{% else %}status-new{% endif %}">
+                  {{ s or 'חדש' }}
+                </span>
+              {% endif %}
             </td>
-            <td class="text-muted small">{{ o.get('תאריך יצירה', o.get('Created', ''))[:10] }}</td>
-            <td class="text-end">
-              <a href="{{ url_for('order_detail', record_id=o.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+            <td class="text-muted small">
+              {% set d = o.get('תאריך יצירה', '') %}
+              {{ d[:10] if d else '—' }}
+            </td>
+            <td class="text-end" onclick="event.stopPropagation()">
+              <div class="d-flex gap-1 justify-content-end">
+                <a href="{{ url_for('order_detail', record_id=o.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+                <a href="{{ url_for('order_pdf', record_id=o.id) }}" class="btn btn-outline-secondary btn-sm" title="PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
+              </div>
             </td>
           </tr>
           {% endfor %}

@@ -3,36 +3,45 @@
 {% block page_title %}<i class="bi bi-tools me-2"></i>מתקינים{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="card-header">
-    <i class="bi bi-tools me-2"></i>צוות מתקינים ({{ installers|length }})
-  </div>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-tools me-2"></i>צוות מתקינים ({{ installers|length }})</span
+    <a href="{{ url_for('installer_new') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>מתקין חדש
+    </a>
+  </div
   <div class="card-body p-0">
     {% if installers %}
     <div class="table-responsive">
       <table class="table table-hover mb-0">
-        <thead>
-          <tr><th>שם</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th></th></tr>
+        <thead class="table-light">
+          <tr><th style="width:40%">שם</th><th style="width:25%">טלפון</th><th style="width:15%">סטטוס</th><th style="width:10%">הערות</th><th style="width:10%">פעולות</th></tr>
         </thead>
         <tbody>
           {% for inst in installers %}
-          <tr onclick="window.location='{{ url_for('installer_detail', record_id=inst.id) }}'">
+          <tr onclick="window.location='{{ url_for('installer_detail', record_id=inst.id) }}'" style="cursor:pointer;">
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle bg-warning d-inline-flex align-items-center justify-content-center text-dark fw-bold" style="width:36px;height:36px;font-size:0.9rem">
-                  {{ inst.get('שם','?')[0] }}
+                  {{ inst.get('שם פרטי', inst.get('Name', '?'))[:1] }}
                 </div>
-                <strong>{{ inst.get('שם', '—') }}</strong>
+                <strong class="text-nowrap">{{ inst.get('שם פרטי', inst.get('Name', '—')) }}</strong>
               </div>
             </td>
             <td>{{ inst.get('טלפון', '—') }}</td>
             <td>
               {% set s = inst.get('סטטוס', inst.get('פעיל', '')) %}
-              {% if s %}<span class="badge status-done">{{ s }}</span>{% else %}<span class="badge status-new">פעיל</span>{% endif %}
+              {% if s %}<span class="badge bg-success-subtle text-success">{{ s }}</span>{% else %}<span class="badge bg-secondary">פעיל</span>{% endif %}
             </td>
-            <td class="text-muted small">{{ inst.get('הערות', '') }}</td>
+            <td class="text-muted small text-truncate" style="max-width:100px;">{{ inst.get('הערות', '') }}</td>
             <td class="text-end">
-              <a href="{{ url_for('installer_detail', record_id=inst.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+              <div class="btn-group">
+                <a href="{{ url_for('installer_edit', record_id=inst.id) }}" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation();">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{{ url_for('installer_detail', record_id=inst.id) }}" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </div>
             </td>
           </tr>
           {% endfor %}

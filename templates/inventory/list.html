@@ -1,43 +1,78 @@
 {% extends 'base.html' %}
 {% block title %}מלאי{% endblock %}
-{% block page_title %}<i class="bi bi-boxes me-2"></i>מלאי{% endblock %}
+{% block page_title %}<i class="bi bi-boxes me-2"></i>מלאי לפי מיקום{% endblock %}
+
+{% block topbar_actions %}
+  <button class="btn btn-warning btn-sm" onclick="showNegativeOnly()">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>הצג מינוס בלבד
+  </button>
+{% endblock %}
 
 {% block content %}
 <div class="card">
-  <div class="card-header">
-    <i class="bi bi-boxes me-2"></i>מלאי לפי מיקום ({{ inventory|length }} רשומות)
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-boxes me-2"></i>מלאי לפי מיקום ({{ inventory|length }} רשומות)</span>
+    <div class="btn-group btn-group-sm" role="group">
+      <button type="button" class="btn btn-outline-secondary active" id="btn-all" onclick="filterLocation('all', this)">הכל</button>
+      <button type="button" class="btn btn-outline-secondary" id="btn-חנות" onclick="filterLocation('חנות', this)">חנות</button>
+      <button type="button" class="btn btn-outline-secondary" id="btn-מחסן" onclick="filterLocation('מחסן', this)">מחסן</button>
+    </div>
   </div>
   <div class="card-body p-0">
     {% if inventory %}
     <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead>
+      <table class="table table-hover mb-0" id="inventoryTable">
+        <thead class="table-light">
           <tr>
-            <th>פריט / מוצר</th>
+            <th>שם מוצר</th>
+            <th>מקט</th>
             <th>מיקום</th>
-            <th>כמות</th>
-            <th>סטטוס</th>
-            <th>הערות</th>
+            <th>כמות מחושבת</th>
+            <th>מפתח מוצר-מיקום</th>
+            <th style="width:80px"></th>
           </tr>
         </thead>
         <tbody>
           {% for item in inventory %}
-          <tr>
-            <td><strong>{{ item.get('מוצר', item.get('שם', item.get('פריט', '—'))) }}</strong></td>
-            <td>{{ item.get('מיקום', '—') }}</td>
+          {% set product_name = item.get('שם המוצר') %}
+          {% if product_name is iterable and product_name is not string %}
+            {% set product_name = product_name | join(', ') %}
+          {% endif %}
+          {% set sku = item.get('מקט (from מוצר)') %}
+          {% if sku is iterable and sku is not string %}
+            {% set sku = sku | join(', ') %}
+          {% endif %}
+          {% set qty = item.get('כמות מחושבת', 0) or 0 %}
+          {% set location = item.get('מיקום', '') %}
+          {% set key = item.get('מפתח מוצר-מיקום חדש', '') %}
+          <tr data-location="{{ location }}" data-qty="{{ qty }}" {% if qty < 0 %}class="table-danger"{% endif %}>
+            <td><strong>{{ product_name or '—' }}</strong></td>
+            <td class="text-muted small">{{ sku or '—' }}</td>
             <td>
-              {% set qty = item.get('כמות', item.get('מלאי', '—')) %}
-              {% if qty is number %}
-                <span class="badge {% if qty <= 0 %}status-cancelled{% elif qty < 5 %}status-pending{% else %}status-done{% endif %}">{{ qty }}</span>
+              {% if location == 'חנות' %}
+                <span class="badge bg-primary">חנות</span>
+              {% elif location == 'מחסן' %}
+                <span class="badge bg-secondary">מחסן</span>
               {% else %}
-                {{ qty }}
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td>
-              {% set s = item.get('סטטוס', '') %}
-              {% if s %}<span class="badge status-new">{{ s }}</span>{% else %}—{% endif %}
+              <span class="badge {% if qty < 0 %}bg-danger{% elif qty == 0 %}bg-secondary{% elif qty < 3 %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
+                {% if qty > 0 %}+{% endif %}{{ qty }}
+              </span>
+              {% if qty < 0 %}
+                <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="מלאי שלילי!"></i>
+              {% endif %}
             </td>
-            <td class="text-muted small">{{ item.get('הערות', '') }}</td>
+            <td class="text-muted small font-monospace">{{ key or '—' }}</td>
+            <td class="text-end">
+              <button type="button" class="btn btn-outline-warning btn-sm"
+                onclick="openAdjustModal('{{ item.id }}', '{{ product_name | replace("'", "") }}', {{ qty }}, '{{ location }}')"
+                title="תיקון מלאי">
+                <i class="bi bi-tools"></i>
+              </button>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -51,4 +86,132 @@
     {% endif %}
   </div>
 </div>
+
+<!-- מודל תיקון מלאי -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-warning bg-opacity-25">
+        <h5 class="modal-title"><i class="bi bi-tools me-2"></i>תיקון מלאי</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="adjustForm">
+        <div class="modal-body">
+          <div class="mb-3 p-3 bg-light rounded">
+            <div class="fw-bold" id="modalProductName"></div>
+            <div class="text-muted small" id="modalLocation"></div>
+          </div>
+
+          <div class="mb-3 d-flex align-items-center gap-3">
+            <span class="text-muted">כמות נוכחית:</span>
+            <span class="badge fs-5" id="modalCurrentQtyBadge">0</span>
+          </div>
+
+          <input type="hidden" name="current_qty" id="modalCurrentQty" value="0">
+
+          <!-- אפשרות 1: אפס -->
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="adjust_type" id="radioZero" value="zero" checked onchange="onAdjustTypeChange()">
+              <label class="form-check-label fw-bold text-danger" for="radioZero">
+                <i class="bi bi-x-circle-fill me-1"></i>אפס מלאי (הגדר ל-0)
+              </label>
+            </div>
+          </div>
+
+          <!-- אפשרות 2: כמות מותאמת -->
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="adjust_type" id="radioCustom" value="custom" onchange="onAdjustTypeChange()">
+              <label class="form-check-label fw-bold" for="radioCustom">
+                <i class="bi bi-pencil-fill me-1"></i>הגדר כמות ספציפית
+              </label>
+            </div>
+            <div class="mt-2 me-4" id="customQtyDiv" style="display:none">
+              <input type="number" class="form-control" id="customQtyInput" placeholder="הכנס כמות" min="0" value="0">
+            </div>
+          </div>
+
+          <!-- הערה -->
+          <div class="mb-2">
+            <label class="form-label text-muted small">הערה (אופציונלי)</label>
+            <input type="text" class="form-control form-control-sm" name="note" placeholder="סיבת התיקון...">
+          </div>
+
+          <input type="hidden" name="location" id="modalLocationInput" value="">
+          <input type="hidden" name="target_qty" id="modalTargetQty" value="0">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+          <button type="submit" class="btn btn-warning" onclick="submitAdjust()"><i class="bi bi-check-lg me-1"></i>בצע תיקון</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let _currentQty = 0;
+
+function openAdjustModal(recordId, productName, qty, location) {
+  _currentQty = qty;
+  document.getElementById('modalProductName').textContent = productName;
+  document.getElementById('modalLocation').textContent = 'מיקום: ' + location;
+  document.getElementById('modalCurrentQty').value = qty;
+  document.getElementById('customQtyInput').value = Math.max(0, qty);
+
+  const badge = document.getElementById('modalCurrentQtyBadge');
+  badge.textContent = qty;
+  badge.className = 'badge fs-5 ' + (qty < 0 ? 'bg-danger' : qty === 0 ? 'bg-secondary' : 'bg-success');
+
+  document.getElementById('adjustForm').action = '/inventory/' + recordId + '/adjust';
+  document.getElementById('modalLocationInput').value = location;
+  document.getElementById('radioZero').checked = true;
+  document.getElementById('customQtyDiv').style.display = 'none';
+  document.getElementById('modalTargetQty').value = 0;
+
+  new bootstrap.Modal(document.getElementById('adjustModal')).show();
+}
+
+function onAdjustTypeChange() {
+  const isCustom = document.getElementById('radioCustom').checked;
+  document.getElementById('customQtyDiv').style.display = isCustom ? '' : 'none';
+  document.getElementById('modalTargetQty').value = isCustom
+    ? document.getElementById('customQtyInput').value
+    : 0;
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target.id === 'customQtyInput') {
+    document.getElementById('modalTargetQty').value = e.target.value;
+  }
+});
+
+function submitAdjust() {
+  if (document.getElementById('radioCustom').checked) {
+    document.getElementById('modalTargetQty').value = document.getElementById('customQtyInput').value;
+  } else {
+    document.getElementById('modalTargetQty').value = 0;
+  }
+}
+
+function filterLocation(loc, btn) {
+  document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#inventoryTable tbody tr').forEach(row => {
+    if (loc === 'all' || row.dataset.location === loc) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+function showNegativeOnly() {
+  document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#inventoryTable tbody tr').forEach(row => {
+    row.style.display = parseFloat(row.dataset.qty) < 0 ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}

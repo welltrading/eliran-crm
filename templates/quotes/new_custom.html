@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}הצעת מחיר — מקלחון ייצור אישי{% endblock %}
+{% block page_title %}<i class="bi bi-sliders me-2"></i>הצעת מחיר — מקלחון ייצור אישי{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-sliders me-2"></i>יצירת הצעת מחיר ייצור אישי</span>
+        <a href="{{ url_for('quote_select_type') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-right me-1"></i>חזרה לבחירת סוג
+        </a>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+
+          <!-- פרטי לקוח -->
+          <h6 class="text-muted mb-3 border-bottom pb-2"><i class="bi bi-person me-1"></i>פרטי לקוח</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">שם הלקוח <span class="text-danger">*</span></label>
+              <input type="text" name="customer_name" class="form-control" required placeholder="שם מלא...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">נייד</label>
+              <input type="tel" name="phone" class="form-control" placeholder="05X-XXXXXXX">
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label fw-bold">כתובת</label>
+              <input type="text" name="address" class="form-control" placeholder="רחוב, עיר...">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">מקור הגעה</label>
+              <select name="lead_source" class="form-select">
+                <option value="">— בחירה —</option>
+                <option value="מדרג">מדרג</option>
+                <option value="מקצוענים">מקצוענים</option>
+                <option value="גוגל">גוגל</option>
+                <option value="המלצה">המלצה</option>
+                <option value="אחר">אחר</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- פרטי מוצר -->
+          <h6 class="text-muted mb-3 border-bottom pb-2 mt-4"><i class="bi bi-box me-1"></i>פרטי מוצר</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label fw-bold">שם מוצר</label>
+              <select name="product_id" class="form-select" id="productSelect">
+                <option value="">— בחירת מוצר —</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" data-name="{{ p.get('שם מוצר מלא', '') }}">
+                  {{ p.get('שם מוצר מלא', '—') }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">כמות</label>
+              <input type="number" name="quantity" class="form-control" value="1" min="1">
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">נדרשת מדידה?</label>
+              <div class="d-flex gap-3 mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="needs_measurement" id="measYes" value="כן">
+                  <label class="form-check-label" for="measYes">כן</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="needs_measurement" id="measNo" value="לא" checked>
+                  <label class="form-check-label" for="measNo">לא</label>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">אפשרות פירוק</label>
+              <select name="dismantling" class="form-select">
+                <option value="לא נדרש פירוק" selected>לא נדרש פירוק</option>
+                <option value="נדרש פירוק">נדרש פירוק</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">מחיר קבוע למ"ר (₪)</label>
+              <div class="input-group">
+                <span class="input-group-text">₪</span>
+                <input type="number" name="price_per_sqm" class="form-control" placeholder="0" step="0.01" min="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- מפרט טכני -->
+          <h6 class="text-muted mb-3 border-bottom pb-2 mt-4"><i class="bi bi-rulers me-1"></i>מפרט ומידות</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">מידות לקוח עומק (ס"מ)</label>
+              <input type="number" name="depth_cm" class="form-control" placeholder="0" step="0.1" min="0" id="depthInput">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">מידות לקוח רוחב (ס"מ)</label>
+              <input type="number" name="width_cm" class="form-control" placeholder="0" step="0.1" min="0" id="widthInput">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">גובה מקלחון (מטר)</label>
+              <input type="number" name="height_m" class="form-control" placeholder="0.00" step="0.01" min="0">
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">זכוכית</label>
+              <select name="glass_type" class="form-select">
+                <option value="">— בחירה —</option>
+                <option value="שקופה">שקופה</option>
+                <option value="גרניט">גרניט</option>
+                <option value="פסים">פסים</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">צבע פרזול</label>
+              <select name="hardware_color" class="form-select">
+                <option value="">— בחירה —</option>
+                <option value="גרפיט">גרפיט</option>
+                <option value="לבן">לבן</option>
+                <option value="ניקל">ניקל</option>
+                <option value="שחור">שחור</option>
+                <option value="זהב">זהב</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">מחיר כולל ייצור אישי (₪)</label>
+              <div class="input-group">
+                <span class="input-group-text">₪</span>
+                <input type="number" class="form-control bg-light" placeholder="מחושב אוטומטית" step="0.01" min="0" id="totalPrice" readonly>
+              </div>
+              <small class="text-muted">מחושב: (רוחב + עומק) / 100 × גובה × מחיר למ"ר</small>
+            </div>
+          </div>
+
+          <!-- תשלום -->
+          <h6 class="text-muted mb-3 border-bottom pb-2 mt-4"><i class="bi bi-credit-card me-1"></i>תשלום</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">תשלום מלא/מקדמה</label>
+              <select name="payment_type" class="form-select">
+                <option value="תשלום מלא">תשלום מלא</option>
+                <option value="מקדמה 60%">מקדמה 60%</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">אמצעי תשלום</label>
+              <select name="payment_method" class="form-select">
+                <option value="">— בחירה —</option>
+                <option value="העברה בנקאית">העברה בנקאית</option>
+                <option value="אשראי">אשראי</option>
+                <option value="מזומן">מזומן</option>
+                <option value="ביט">ביט</option>
+                <option value="פייבוקס">פייבוקס</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- סטטוס והערות -->
+          <h6 class="text-muted mb-3 border-bottom pb-2 mt-4"><i class="bi bi-info-circle me-1"></i>סטטוס והערות</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">סטטוס</label>
+              <select name="status" class="form-select">
+                <option value="טיוטה" selected>טיוטה</option>
+                <option value="נשלחה">נשלחה</option>
+                <option value="אושרה">אושרה</option>
+                <option value="נדחתה">נדחתה</option>
+                <option value="הומרה להזמנה">הומרה להזמנה</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold">הערות</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="הערות נוספות..."></textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-lg me-1"></i>צור הצעת מחיר
+            </button>
+            <a href="{{ url_for('quote_select_type') }}" class="btn btn-outline-secondary">ביטול</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Auto-calculate: (רוחב + עומק) / 100 × גובה × מחיר למ"ר
+  const widthInput = document.getElementById('widthInput');
+  const depthInput = document.getElementById('depthInput');
+  const heightInput = document.querySelector('input[name="height_m"]');
+  const pricePerSqmInput = document.querySelector('input[name="price_per_sqm"]');
+  const totalPrice = document.getElementById('totalPrice');
+
+  function calcTotal() {
+    const w = parseFloat(widthInput.value) || 0;
+    const d = parseFloat(depthInput.value) || 0;
+    const h = parseFloat(heightInput.value) || 0;
+    const ppsm = parseFloat(pricePerSqmInput.value) || 0;
+
+    if (w > 0 && d > 0 && h > 0 && ppsm > 0) {
+      const total = (w + d) / 100 * h * ppsm;
+      totalPrice.value = total.toFixed(2);
+    } else {
+      totalPrice.value = '';
+    }
+  }
+
+  widthInput.addEventListener('input', calcTotal);
+  depthInput.addEventListener('input', calcTotal);
+  heightInput.addEventListener('input', calcTotal);
+  pricePerSqmInput.addEventListener('input', calcTotal);
+</script>
+{% endblock %}

@@ -1,54 +1,239 @@
 {% extends 'base.html' %}
-{% block title %}הזמנה חדשה{% endblock %}
-{% block page_title %}<i class="bi bi-cart-plus me-2"></i>הזמנה חדשה{% endblock %}
+{% block title %}{% if quote %}המרת הצעה להזמנה{% else %}הזמנה חדשה{% endif %}{% endblock %}
+{% block page_title %}<i class="bi bi-cart-plus me-2"></i>{% if quote %}המרת הצעה להזמנה{% else %}הזמנה חדשה{% endif %}{% endblock %}
 
 {% block topbar_actions %}
+  {% if quote %}
+  <a href="{{ url_for('quote_detail', record_id=quote.id) }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-right me-1"></i>חזרה להצעה
+  </a>
+  {% else %}
   <a href="{{ url_for('orders_list') }}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-right me-1"></i>חזרה
   </a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-7">
-    <div class="card">
-      <div class="card-header"><i class="bi bi-cart-plus me-2"></i>יצירת הזמנה חדשה</div>
-      <div class="card-body">
-        <form method="post">
+
+{% if quote %}
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+  <i class="bi bi-arrow-left-right fs-5"></i>
+  <div>
+    <strong>המרת הצעת מחיר להזמנה</strong> — כל הפרטים הועתקו מההצעה. ניתן לערוך לפני השמירה.
+    <span class="badge bg-primary me-2">{{ quote.get('שם לקוח','') }}</span>
+  </div>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('order_new') }}{% if quote %}?quote_id={{ quote.id }}{% endif %}">
+  {% if quote %}
+  <input type="hidden" name="source_quote_id" value="{{ quote.id }}">
+  {% endif %}
+
+  <div class="row g-3">
+
+    <!-- עמודה שמאל: לקוח + מוצר + כספים -->
+    <div class="col-lg-4">
+
+      <!-- לקוח -->
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-person me-2"></i>לקוח</div>
+        <div class="card-body">
           <div class="mb-3">
-            <label class="form-label fw-600">לקוח</label>
+            <label class="form-label">בחר לקוח</label>
             <select name="customer_id" class="form-select">
               <option value="">— בחר לקוח —</option>
               {% for c in customers %}
-              <option value="{{ c.id }}">{{ c.get('שם', c.id) }}</option>
+              {% set cname = c.get('שם לקוח', c.get('שם', c.id)) %}
+              <option value="{{ c.id }}"
+                {% if quote and (
+                  (quote.get('לקוחות') and c.id in quote.get('לקוחות', [])) or
+                  (quote.get('שם לקוח') and quote.get('שם לקוח','').strip().lower() == cname.strip().lower())
+                ) %}selected{% endif %}>
+                {{ cname }}
+              </option>
+              {% endfor %}
+            </select>
+            {% if quote and quote.get('שם לקוח') %}
+            <small class="text-muted">מהצעה: <strong>{{ quote.get('שם לקוח') }}</strong> — {{ quote.get('טלפון','') }}</small>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- מוצר + כמות + מחיר -->
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-box-seam me-2"></i>מוצר וכספים</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">מוצר</label>
+            <select name="product_id" class="form-select">
+              <option value="">— ללא מוצר מקושר —</option>
+              {% for p in products %}
+              {% set matched = quote and quote.get('מוצרים') and (
+                (p.id in quote.get('מוצרים', [])) if quote.get('מוצרים') is iterable and quote.get('מוצרים') is not string
+                else p.id == quote.get('מוצרים')
+              ) %}
+              <option value="{{ p.id }}" {% if matched %}selected{% endif %}>
+                {{ p.get('שם מוצר מלא', p.get('מקט', p.id)) }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">כמות</label>
+              <input type="number" name="כמות" class="form-control" min="1"
+                value="{{ quote.get('כמות', '') if quote else '' }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label">מחיר (₪)</label>
+              <input type="number" name="מחיר בשקלים" class="form-control" step="0.01" min="0"
+              value="{{ quote.get('מחיר בשקלים', quote.get('מחיר כולל', '')) if quote else '' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- תשלום -->
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-credit-card me-2"></i>תשלום</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">סוג תשלום</label>
+            <select name="תשלום מלא/מקדמה" class="form-select">
+              <option value="">— בחר —</option>
+              {% for opt in ['תשלום מלא', 'מקדמה'] %}
+              <option value="{{ opt }}" {% if quote and quote.get('תשלום מלא/מקדמה') == opt %}selected{% endif %}>{{ opt }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-600">תיאור / נושא</label>
-            <input type="text" name="description" class="form-control" placeholder="תיאור קצר של ההזמנה">
+            <label class="form-label">אמצעי תשלום</label>
+            <select name="אמצעי תשלום" class="form-select">
+              <option value="">— בחר —</option>
+              {% for opt in ['מזומן', 'אשראי', 'העברה בנקאית', 'צ׳ק', 'פייבוקס', 'ביט'] %}
+              <option value="{{ opt }}" {% if quote and quote.get('אמצעי תשלום') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+              {% if quote and quote.get('אמצעי תשלום') and quote.get('אמצעי תשלום') not in ['מזומן','אשראי','העברה בנקאית',"צ'ק",'פייבוקס','ביט'] %}
+              <option value="{{ quote.get('אמצעי תשלום') }}" selected>{{ quote.get('אמצעי תשלום') }}</option>
+              {% endif %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- עמודה אמצע: מידות ומפרט -->
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-rulers me-2"></i>מידות</div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">רוחב (ס"מ)</label>
+              <input type="number" name="מידות לקוח רוחב" class="form-control" step="0.1"
+                value="{{ quote.get('מידות לקוח רוחב', '') if quote else '' }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label">עומק (ס"מ)</label>
+              <input type="number" name="מידות לקוח עומק" class="form-control" step="0.1"
+                value="{{ quote.get('מידות לקוח עומק', '') if quote else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">גובה מקלחון (מ')</label>
+              <input type="number" name="גובה מקלחון (מטר)" class="form-control" step="0.01"
+                value="{{ quote.get('גובה מקלחון (מטר)', '') if quote else '' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-tools me-2"></i>מפרט טכני</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">זכוכית</label>
+            <select name="זכוכית" class="form-select">
+              <option value="">— בחר —</option>
+              {% for opt in ['שקופה', 'מחוספסת', 'מעורפלת', 'מודפסת'] %}
+              <option value="{{ opt }}" {% if quote and quote.get('זכוכית') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+              {% if quote and quote.get('זכוכית') and quote.get('זכוכית') not in ['שקופה','מחוספסת','מעורפלת','מודפסת'] %}
+              <option value="{{ quote.get('זכוכית') }}" selected>{{ quote.get('זכוכית') }}</option>
+              {% endif %}
+            </select>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-600">סטטוס</label>
-            <select name="status" class="form-select">
-              {% for s in ['טיוטה','ממתינה לאישור','אושרה','בייצור','מוכנה','הותקנה'] %}
-              <option value="{{ s }}">{{ s }}</option>
+            <label class="form-label">צבע פרזול</label>
+            <select name="צבע פרזול" class="form-select">
+              <option value="">— בחר —</option>
+              {% for opt in ['כרום', 'ניקל', 'שחור מט', 'לבן', 'זהב', 'ברונזה'] %}
+              <option value="{{ opt }}" {% if quote and quote.get('צבע פרזול') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+              {% if quote and quote.get('צבע פרזול') and quote.get('צבע פרזול') not in ['כרום','ניקל','שחור מט','לבן','זהב','ברונזה'] %}
+              <option value="{{ quote.get('צבע פרזול') }}" selected>{{ quote.get('צבע פרזול') }}</option>
+              {% endif %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">סטנדרטי / ייצור אישי</label>
+            <select name="סטנדרטי/ייצור אישי" class="form-select">
+              <option value="">— בחר —</option>
+              {% for opt in ['סטנדרטי', 'ייצור אישי'] %}
+              <option value="{{ opt }}" {% if quote and quote.get('סטנדרטי/ייצור אישי') == opt %}selected{% endif %}>{{ opt }}</option>
               {% endfor %}
             </select>
           </div>
-          <div class="mb-4">
-            <label class="form-label fw-600">הערות</label>
-            <textarea name="notes" class="form-control" rows="3" placeholder="הערות נוספות..."></textarea>
+          <div class="mb-3">
+            <label class="form-label">אפשרות פירוק</label>
+            <select name="אפשרות פירוק" class="form-select">
+              <option value="">— בחר —</option>
+              {% for opt in ['נדרש פירוק', 'לא נדרש פירוק'] %}
+              <option value="{{ opt }}" {% if quote and quote.get('אפשרות פירוק') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
           </div>
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-check-lg me-1"></i>יצירת הזמנה
-            </button>
-            <a href="{{ url_for('orders_list') }}" class="btn btn-outline-secondary">ביטול</a>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
+
+    <!-- עמודה ימין: סטטוס + הערות -->
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-flag me-2"></i>סטטוס</div>
+        <div class="card-body">
+          <select name="status" class="form-select">
+            {% for s in ['חדש', 'טיוטה', 'ממתינה לאישור', 'אושרה', 'בייצור', 'מוכנה'] %}
+            <option value="{{ s }}" {% if s == 'חדש' %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header fw-bold"><i class="bi bi-chat-left-text me-2"></i>הערות</div>
+        <div class="card-body">
+          <textarea name="notes" class="form-control" rows="8"
+            placeholder="הערות נוספות...">{{ quote.get('הערות', '') if quote else '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-check-lg me-1"></i>
+          {% if quote %}צור הזמנה מהצעה{% else %}צור הזמנה{% endif %}
+        </button>
+        {% if quote %}
+        <a href="{{ url_for('quote_detail', record_id=quote.id) }}" class="btn btn-outline-secondary">ביטול</a>
+        {% else %}
+        <a href="{{ url_for('orders_list') }}" class="btn btn-outline-secondary">ביטול</a>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
-</div>
+</form>
 {% endblock %}

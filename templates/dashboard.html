@@ -66,8 +66,9 @@
           <table class="table table-hover mb-0">
             <thead>
               <tr>
-                <th>מזהה</th>
-                <th>לקוח</th>
+                <th>#</th>
+                <th>שם לקוח</th>
+                <th>טלפון</th>
                 <th>סטטוס</th>
                 <th>תאריך</th>
               </tr>
@@ -75,8 +76,9 @@
             <tbody>
               {% for order in recent_orders %}
               <tr onclick="window.location='{{ url_for('order_detail', record_id=order.id) }}'">
-                <td><span class="text-muted small">{{ order.id[:8] }}...</span></td>
-                <td>{{ order.get('לקוח', [''])|join(', ') if order.get('לקוח') else '—' }}</td>
+                <td><span class="fw-bold text-primary">{{ order.get('מספר הזמנה', '—') }}</span></td>
+                <td><strong>{{ order.get('_שם לקוח', '—') }}</strong></td>
+                <td class="text-muted small">{{ order.get('_טלפון', '—') }}</td>
                 <td>
                   {% set s = order.get('סטטוס', '') %}
                   <span class="badge {% if s in ['הושלם','אושר'] %}status-done{% elif s in ['בוטל'] %}status-cancelled{% elif s in ['בתהליך','בייצור'] %}status-progress{% else %}status-new{% endif %}">{{ s or 'חדש' }}</span>

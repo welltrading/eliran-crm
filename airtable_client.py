@@ -74,7 +74,7 @@ class AirtableClient:
     def create(self, table_name: str, fields: dict) -> dict | None:
         """Create a new record."""
         try:
-            r = self.table(table_name).create(fields)
+            r = self.table(table_name).create(fields, typecast=True)
             return {"id": r["id"], **r["fields"]}
         except Exception as e:
             print(f"[AirtableClient] create({table_name}) error: {e}")
@@ -105,23 +105,52 @@ class AirtableClient:
     def get_customers(self, search: str = None) -> list:
         formula = None
         if search:
-            formula = f"OR(FIND('{search}', {{שם}}), FIND('{search}', {{טלפון}}))"
-        return self.get_all("customers", formula=formula, sort=["שם"])
+            formula = f"OR(FIND('{search}', {{שם לקוח}}), FIND('{search}', {{טלפון}}))"
+        fields = [
+            "שם לקוח",
+            "טלפון", 
+            "אימייל",
+            "כתובת",
+            "הערות",
+        ]
+        return self.get_all("customers", formula=formula, fields=fields, sort=["שם לקוח"])
 
     def get_orders(self, status: str = None, customer_id: str = None) -> list:
         parts = []
         if status:
             parts.append(f"{{סטטוס}}='{status}'")
         if customer_id:
-            parts.append(f"FIND('{customer_id}', ARRAYJOIN({{לקוח}}))")
+            parts.append(f"FIND('{customer_id}', ARRAYJOIN({{לקוחות}}))")
         formula = f"AND({', '.join(parts)})" if parts else None
-        return self.get_all("orders", formula=formula)
+        fields = [
+            "מספר הזמנה",
+            "שם לקוח",
+            "טלפון",
+            "סטטוס",
+            "שם מוצר",
+            "דגם (from שם מוצר)",
+            "כמות",
+            "מחיר בשקלים",
+            "תאריך יצירה",
+            "לקוחות",
+        ]
+        return self.get_all("orders", formula=formula, fields=fields, sort=["-תאריך יצירה"])
 
     def get_inventory(self) -> list:
-        return self.get_all("inventory_by_location")
+        fields = [
+            "מוצר",
+            "מיקום",
+            "כמות מחושבת",
+            "מקט (from מוצר)",
+            "מפתח מוצר-מיקום חדש",
+            "שם המוצר",
+            "תנועות מלאי",
+            "RECORD_ID",
+        ]
+        return self.get_all("inventory_by_location", fields=fields, sort=["מיקום"])
 
     def get_installers(self) -> list:
-        return self.get_all("installers", sort=["Name"])
+        return self.get_all("installers", sort=["שם פרטי"])
 
     def get_tasks(self, status: str = None) -> list:
         formula = f"{{סטטוס}}='{status}'" if status else None
@@ -129,10 +158,27 @@ class AirtableClient:
 
     def get_quotes(self, status: str = None) -> list:
         formula = f"{{סטטוס}}='{status}'" if status else None
-        return self.get_all("quotes", formula=formula)
+        fields = [
+            "Name",
+            "שם לקוח",
+            "טלפון",
+            "כתובת",
+            "סטטוס",
+            "מוצרים",
+            "דגם (from מוצרים)",
+            "כמות",
+            "מחיר בשקלים",
+            "מחיר כולל",
+            "סטנדרטי/ייצור אישי",
+            "תאריך יצירה",
+        ]
+        return self.get_all("quotes", formula=formula, fields=fields, sort=["-Name"])
 
     def get_products(self) -> list:
-        return self.get_all("products", sort=["שם מוצר מלא"], fields=["שם מוצר מלא", "מידה", "סוג זכוכית", "גוון פרזול", "גובה", "תמונה"])
+        return self.get_all("products", sort=["דגם בסיס", "מידה"], fields=[
+            "שם מוצר מלא", "דגם", "דגם בסיס", "מידה", "גובה",
+            "סוג זכוכית", "גוון פרזול", "מקט", "תיאור המוצר", "תמונה"
+        ])
 
     def create_product(self, fields: dict) -> dict | None:
         return self.create("products", fields)

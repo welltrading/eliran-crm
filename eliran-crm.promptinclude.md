@@ -56,6 +56,34 @@ Lead → Measurement → Quote → Approval → Inventory → Installation → A
 ## מצב נוכחי
 - Phase 1 בתהליך — חיבור Airtable פעיל ✅
 - Base ID: `app77CdzKEqLlhZ8d` (ניהול לקוחות ופרויקטים - א.ש מקלחונים מעוצבים)
+- עדכון אחרון: 27/04/2026
+
+### שינויים אחרונים (27/04/2026)
+
+#### מלאי לפי מיקום — עדכון שדות פעילים
+- תועדו השדות הפעילים: מוצר, מיקום, תנועות מלאי, כמות מחושבת, מקט (from מוצר)
+- נוסף שדה **מפתח מוצר-מיקום חדש** (formula): `ARRAYJOIN({מקט (from מוצר)}) & " | " & {מיקום}`
+- עודכן `get_inventory()` ב-`airtable_client.py` לשלוף רק שדות פעילים + מיון לפי מיקום
+- עודכנה `templates/inventory/list.html` — עמודות: שם מוצר, מקט, מיקום, כמות מחושבת, מפתח + פילטר מהיר חנות/מחסן
+
+#### PDF הצעת מחיר — עיצוב חדש
+- נבנתה `templates/pdf/quote_pdf.html` מחדש לפי עיצוב הלקוח:
+  - כותרת: לוגו + פרטי חברה (עוסק מורשה, כתובת, טל, אתר)
+  - פרטי לקוח + [העתק נאמן למקור] + תאריך + חותמת
+  - כותרת מסמך ממורכזת עם מספר הצעה
+  - טבלת פריטים עם כותרת זהב/אמבר
+  - סיכום מע"מ 18% + סה"כ
+  - הערה מצורפת + פוטר עם אחריות + חתימה
+- לוגו חברה: `/a0/usr/projects/eliran/static/logo.png` ✅
+
+#### רשימת הצעות מחיר — עמודות חדשות
+- `get_quotes()` מביא: Name, שם לקוח, טלפון, כתובת, סטטוס, מוצרים, דגם (from מוצרים), כמות, מחיר, מחיר כולל, סטנדרטי/ייצור אישי
+- תבנית `templates/quotes/list.html` — עמודות: #, שם לקוח, טלפון, כתובת, **דגם (from מוצרים)**, כמות, סטטוס, תאריך + כפתור PDF
+
+#### רשימת הזמנות — עמודות חדשות
+- `get_orders()` מביא: מספר הזמנה, שם לקוח, כתובת, סטטוס, שם מוצר, כמות, מחיר, תאריך יצירה, אופי ההזמנה, הזמנה בוטלה
+- תבנית `templates/orders/list.html` — עמודות: #, שם לקוח, כתובת, מוצר, כמות, סטטוס, תאריך + כפתור PDF
+- הזמנות מבוטלות מוצגות בשקיפות מופחתת
 
 ## טבלאות Airtable (שמות + IDs)
 | שם טבלה | Table ID |
@@ -144,18 +172,20 @@ Lead → Measurement → Quote → Approval → Inventory → Installation → A
 | תנועות מלאי 2 | multipleRecordLinks | fldtfSk4hW33XX8Ou |
 
 ### מלאי לפי מיקום (tbl6HhpUq3cTba1RB)
-| שם שדה | סוג | Field ID |
-|---|---|---|
-| מלאי לפי מיקום | formula | fldYboj1U8ZHJK6aq |
-| מוצר | multipleRecordLinks | fldHUiTkn1TFdW9n4 |
-| כמות מחושבת | rollup | fldr4VIQAnulf5eIv |
-| תנועות מלאי | multipleRecordLinks | flddno6IQLP121x7f |
-| נמצא במלאי | formula | fld5uQzsRkmiQOthD |
-| מיקום | singleSelect | fldmKrx7PBJjv0zUH |
-| שם המוצר | multipleLookupValues | fldJllZEkwhXL6SIH |
-| מקט (from מוצר) | multipleLookupValues | fldgrSdEuxPne8fUH |
-| הערות | multilineText | fldTVVWgOLmKesSlK |
-| RECORD_ID | formula | fldbWwt0xs5Qtd7aG |
+| שם שדה | סוג | Field ID | הערות |
+|---|---|---|---|
+| מוצר | multipleRecordLinks | fldHUiTkn1TFdW9n4 | ⭐ קריטי — קישור לטבלת מוצרים |
+| מיקום | singleSelect | fldmKrx7PBJjv0zUH | ⭐ קריטי — ערכים: `חנות` / `מחסן` |
+| תנועות מלאי | multipleRecordLinks | flddno6IQLP121x7f | כל תנועות המלאי של שורה זו — בסיס לחישוב |
+| כמות מחושבת | rollup | fldr4VIQAnulf5eIv | Rollup — סכום כמות מחושבת מתנועות מלאי = מלאי בפועל |
+| מקט (from מוצר) | multipleLookupValues | fldgrSdEuxPne8fUH | Lookup חשוב מטבלת מוצרים — משמש לבניית המפתח |
+| מפתח מוצר-מיקום חדש | formula | — | ⭐ שדה חדש לאוטומציה: `ARRAYJOIN({מקט (from מוצר)}) & " | " & {מיקום}` |
+| שם המוצר | multipleLookupValues | fldJllZEkwhXL6SIH | Lookup — לתצוגה בלבד |
+| נמצא במלאי | formula | fld5uQzsRkmiQOthD | לא בשימוש פעיל |
+| הערות | multilineText | fldTVVWgOLmKesSlK | |
+| RECORD_ID | formula | fldbWwt0xs5Qtd7aG | |
+
+> **לוגיקת אוטומציה**: השדה `מפתח מוצר-מיקום חדש` משמש לאיתור שורת מלאי לפי מוצר + מיקום. פורמט: `{מקט} | {מיקום}` (לדוגמה: `A100 | חנות`).
 
 ### מתקינים (tblNj2W8WJWbeG1sl)
 | שם שדה | סוג | Field ID |

@@ -7,7 +7,12 @@
   <div class="col-lg-8">
     <div class="card">
       <div class="card-header">
-        <i class="bi bi-file-earmark-text me-2"></i>יצירת הצעת מחיר חדשה
+        <div class="d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-file-earmark-text me-2"></i>יצירת הצעת מחיר סטנדרטית</span>
+          <a href="{{ url_for('quote_select_type') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-right me-1"></i>חזרה לבחירת סוג
+          </a>
+        </div>
       </div>
       <div class="card-body">
         <form method="POST">

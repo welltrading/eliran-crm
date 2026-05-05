@@ -3,8 +3,19 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from dotenv import load_dotenv
 
 # Load secrets
-load_dotenv("/a0/usr/projects/eliran/.a0proj/secrets.env")
-load_dotenv("/a0/usr/projects/eliran/.a0proj/variables.env")
+# Load secrets — manual parse to handle single-line env files
+import re as _re
+def _load_env_file(path):
+    try:
+        content = open(path).read()
+        for k, v in _re.findall(r'([A-Z_]+)=["\']?([^"\' ]+)["\']?', content):
+            if k not in os.environ:
+                os.environ[k] = v
+    except Exception:
+        pass
+
+_load_env_file("/a0/usr/projects/eliran/.a0proj/secrets.env")
+_load_env_file("/a0/usr/projects/eliran/.a0proj/variables.env")
 
 # Fix API key env name
 if os.environ.get("AIRTABLE_API") and not os.environ.get("AIRTABLE_API_KEY"):
@@ -14,10 +25,37 @@ from airtable_client import get_client
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "crm-eliran-secret-2025")
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 def db():
     return get_client()
+
+
+def enrich_orders_with_customers(orders, customers):
+    """Inject _שם לקוח and _טלפון into each order from customer lookup."""
+    cust_map = {c['id']: c for c in customers}
+    for o in orders:
+        name = o.get('שם לקוח')
+        phone = o.get('טלפון')
+        if isinstance(name, list):
+            name = name[0] if name else ''
+        if isinstance(phone, list):
+            phone = phone[0] if phone else ''
+        if not name:
+            cust_ids = o.get('לקוחות', [])
+            if isinstance(cust_ids, list) and cust_ids:
+                cust = cust_map.get(cust_ids[0])
+                if cust:
+                    n = cust.get('שם לקוח', '')
+                    if isinstance(n, list): n = n[0] if n else ''
+                    p = cust.get('טלפון', '')
+                    if isinstance(p, list): p = p[0] if p else ''
+                    name = name or n
+                    phone = phone or p
+        o['_שם לקוח'] = name or '—'
+        o['_טלפון'] = phone or '—'
+    return orders
 
 
 # ─────────────────────────────────────────────
@@ -39,6 +77,7 @@ def dashboard():
     }
 
     recent_orders = sorted(orders, key=lambda x: x.get("תאריך יצירה", ""), reverse=True)[:5]
+    recent_orders = enrich_orders_with_customers(recent_orders, customers)
     urgent_tasks = [t for t in tasks if t.get("סטטוס") not in ["הושלם", "אושר", "בוטל"]][:5]
 
     return render_template("dashboard.html",
@@ -117,40 +156,87 @@ def customer_edit(record_id):
 @app.route("/orders")
 def orders_list():
     status = request.args.get("status", "")
-    orders = db().get_orders(status=status if status else None)
+    client = db()
+    orders = client.get_orders(status=status if status else None)
+    customers = client.get_customers()
+    orders = enrich_orders_with_customers(orders, customers)
     return render_template("orders/list.html", orders=orders, status_filter=status)
 
 
 @app.route("/orders/new", methods=["GET", "POST"])
 def order_new():
-    customers = db().get_customers()
+    client = db()
+    customers = client.get_customers()
+    products = client.get_products()
+    quote = None
+    quote_id = request.args.get("quote_id")
+    if quote_id:
+        quote = client.get_one("quotes", quote_id)
+
     if request.method == "POST":
         customer_id = request.form.get("customer_id")
         fields = {
-            "תיאור": request.form.get("description", ""),
-            "סטטוס": request.form.get("status", "טיוטה"),
+            "סטטוס": request.form.get("status", "חדש"),
             "הערות": request.form.get("notes", ""),
         }
+        for field in ["מידות לקוח רוחב", "מידות לקוח עומק", "גובה מקלחון (מטר)",
+                      "זכוכית", "צבע פרזול", "סטנדרטי/ייצור אישי",
+                      "אפשרות פירוק", "תשלום מלא/מקדמה", "אמצעי תשלום"]:
+            val = request.form.get(field, "")
+            if val:
+                fields[field] = val
+        try:
+            qty = request.form.get("כמות", "")
+            if qty:
+                fields["כמות"] = int(float(qty))
+        except (ValueError, TypeError):
+            pass
+        try:
+            price = request.form.get("מחיר בשקלים", "")
+            if price:
+                fields["מחיר בשקלים"] = float(price)
+        except (ValueError, TypeError):
+            pass
         if customer_id:
-            fields["לקוח"] = [customer_id]
-        fields = {k: v for k, v in fields.items() if v}
-        result = db().create("orders", fields)
+            fields["לקוחות"] = [customer_id]
+        product_id = request.form.get("product_id")
+        if product_id:
+            fields["שם מוצר"] = [product_id]
+        fields = {k: v for k, v in fields.items() if v not in ["", None, []]}
+        source_quote_id = request.form.get("source_quote_id")
+        result = client.create("orders", fields)
         if result:
+            if source_quote_id:
+                try:
+                    client.update("quotes", source_quote_id, {"סטטוס": "הומרה להזמנה"})
+                except Exception:
+                    pass
             flash("הזמנה נוצרה בהצלחה!", "success")
             return redirect(url_for("order_detail", record_id=result["id"]))
         else:
             flash("שגיאה ביצירת הזמנה", "danger")
-    return render_template("orders/new.html", customers=customers)
+    return render_template("orders/new.html", customers=customers, products=products, quote=quote)
+
 
 
 @app.route("/orders/<record_id>")
 def order_detail(record_id):
-    order = db().get_one("orders", record_id)
+    client = db()
+    order = client.get_one("orders", record_id)
     if not order:
         flash("הזמנה לא נמצאה", "danger")
         return redirect(url_for("orders_list"))
-    lines = db().get_order_lines(record_id)
+    # אם שם לקוח ריק אבל יש ID מקושר — שלוף את פרטי הלקוח
+    if not order.get('שם לקוח') and order.get('לקוחות'):
+        cust_ids = order.get('לקוחות')
+        cust_id = cust_ids[0] if isinstance(cust_ids, list) else cust_ids
+        cust = client.get_one('customers', cust_id)
+        if cust:
+            order['שם לקוח'] = cust.get('שם לקוח', '')
+            order['טלפון'] = cust.get('טלפון', '')
+    lines = client.get_order_lines(record_id)
     return render_template("orders/detail.html", order=order, lines=lines)
+
 
 
 @app.route("/orders/<record_id>/status", methods=["POST"])
@@ -160,6 +246,79 @@ def order_update_status(record_id):
         db().update("orders", record_id, {"סטטוס": new_status})
         flash(f"סטטוס עודכן ל: {new_status}", "success")
     return redirect(url_for("order_detail", record_id=record_id))
+
+
+@app.route("/orders/<record_id>/edit", methods=["GET", "POST"])
+def order_edit(record_id):
+    client = db()
+    order = client.get_one("orders", record_id)
+    if not order:
+        flash("הזמנה לא נמצאה", "danger")
+        return redirect(url_for("orders_list"))
+    customers = client.get_customers()
+    products = client.get_products()
+    if request.method == "POST":
+        customer_id = request.form.get("customer_id")
+        fields = {
+            "סטטוס": request.form.get("status", ""),
+            "הערות": request.form.get("notes", ""),
+            "מחיר בשקלים": request.form.get("price", ""),
+            "כמות": request.form.get("quantity", ""),
+            "מהיכן יוצא המוצר": request.form.get("source", ""),
+            "תיאור": request.form.get("description", ""),
+        }
+        # Convert numeric fields to correct types
+        try:
+            qty = request.form.get("quantity", "")
+            if qty:
+                fields["כמות"] = int(float(qty))
+            else:
+                fields.pop("כמות", None)
+        except (ValueError, TypeError):
+            fields.pop("כמות", None)
+        try:
+            price = request.form.get("price", "")
+            if price:
+                fields["מחיר בשקלים"] = float(price)
+            else:
+                fields.pop("מחיר בשקלים", None)
+        except (ValueError, TypeError):
+            fields.pop("מחיר בשקלים", None)
+        if customer_id:
+            fields["לקוחות"] = [customer_id]
+        product_id = request.form.get("product_id")
+        if product_id:
+            fields["שם מוצר"] = [product_id]
+        fields = {k: v for k, v in fields.items() if v not in ["", None, []]}
+        result = client.update("orders", record_id, fields)
+        if result:
+            flash("ההזמנה עודכנה בהצלחה!", "success")
+            return redirect(url_for("order_detail", record_id=record_id))
+        else:
+            flash("שגיאה בעדכון ההזמנה", "danger")
+    return render_template("orders/edit.html", order=order, customers=customers, products=products)
+
+
+@app.route("/orders/<record_id>/cancel", methods=["POST"])
+def order_cancel(record_id):
+    client = db()
+    result = client.update("orders", record_id, {"סטטוס": "בוטל"})
+    if result:
+        flash("ההזמנה בוטלה.", "warning")
+    else:
+        flash("שגיאה בביטול ההזמנה", "danger")
+    return redirect(url_for("order_detail", record_id=record_id))
+
+
+@app.route("/orders/<record_id>/delete", methods=["POST"])
+def order_delete(record_id):
+    client = db()
+    ok = client.delete("orders", record_id)
+    if ok:
+        flash("ההזמנה נמחקה לצמיתות.", "success")
+    else:
+        flash("שגיאה במחיקת ההזמנה", "danger")
+    return redirect(url_for("orders_list"))
 
 
 @app.route("/orders/<record_id>/pdf")
@@ -186,6 +345,52 @@ def quotes_list():
     status = request.args.get("status", "")
     quotes = db().get_quotes(status=status if status else None)
     return render_template("quotes/list.html", quotes=quotes, status_filter=status)
+
+
+@app.route("/quotes/select-type")
+def quote_select_type():
+    return render_template("quotes/select_type.html")
+
+
+@app.route("/quotes/new/custom", methods=["GET", "POST"])
+def quote_new_custom():
+    client = db()
+    products = client.get_products()
+    if request.method == "POST":
+        product_id = request.form.get("product_id")
+        def num(val, cast=float):
+            try: return cast(val) if val else None
+            except: return None
+        fields = {
+            "שם לקוח":              request.form.get("customer_name", ""),
+            "טלפון":                request.form.get("phone", ""),
+            "כתובת":                request.form.get("address", ""),
+            "כמות":                 num(request.form.get("quantity", "1"), int) or 1,
+            "הערות":                request.form.get("notes", ""),
+            "סטטוס":                request.form.get("status", "טיוטה"),
+            "סטנדרטי/ייצור אישי":  "ייצור אישי",
+            "מקור הגעה":            request.form.get("lead_source", ""),
+            "מידות לקוח רוחב":     num(request.form.get("width_cm")),
+            "מידות לקוח עומק":     num(request.form.get("depth_cm")),
+            "גובה מקלחון (מטר)":   num(request.form.get("height_m")),
+            "מחיר קבוע למ\"ר":    num(request.form.get("price_per_sqm")),
+            "זכוכית":               request.form.get("glass_type", ""),
+            "צבע פרזול":            request.form.get("hardware_color", ""),
+            "אפשרות פירוק":         request.form.get("dismantling", ""),
+            "תשלום מלא/מקדמה":     request.form.get("payment_type", ""),
+            "אמצעי תשלום":          request.form.get("payment_method", ""),
+            "?נדרשת מדידה":         request.form.get("needs_measurement", ""),
+        }
+        if product_id:
+            fields["מוצרים"] = [product_id]
+        fields = {k: v for k, v in fields.items() if v not in ["", None]}
+        result = client.create("quotes", fields)
+        if result:
+            flash("הצעת מחיר ייצור אישי נוצרה בהצלחה!", "success")
+            return redirect(url_for("quote_detail", record_id=result["id"]))
+        else:
+            flash("שגיאה ביצירת הצעת מחיר", "danger")
+    return render_template("quotes/new_custom.html", products=products)
 
 
 @app.route("/quotes/new", methods=["GET", "POST"])
@@ -222,7 +427,64 @@ def quote_detail(record_id):
     if not quote:
         flash("הצעה לא נמצאה", "danger")
         return redirect(url_for("quotes_list"))
-    return render_template("quotes/detail.html", quote=quote)
+    products = db().get_products()
+    return render_template("quotes/detail.html", quote=quote, products=products)
+
+
+@app.route("/quotes/<record_id>/edit", methods=["GET", "POST"])
+def quote_edit(record_id):
+    client = db()
+    quote = client.get_one("quotes", record_id)
+    if not quote:
+        flash("הצעה לא נמצאה", "danger")
+        return redirect(url_for("quotes_list"))
+    products = client.get_products()
+    if request.method == "POST":
+        def num(val, cast=float):
+            try: return cast(val) if val else None
+            except: return None
+        quote_type = quote.get("סטנדרטי/ייצור אישי", "סטנדרטי")
+        fields = {
+            "שם לקוח":              request.form.get("customer_name", ""),
+            "טלפון":                request.form.get("phone", ""),
+            "כתובת":                request.form.get("address", ""),
+            "כמות":                 num(request.form.get("quantity", "1"), int) or 1,
+            "הערות":                request.form.get("notes", ""),
+            "סטטוס":                request.form.get("status", "טיוטה"),
+            "מקור הגעה":            request.form.get("lead_source", ""),
+        }
+        if quote_type == "ייצור אישי":
+            fields.update({
+                "מידות לקוח רוחב":     num(request.form.get("width_cm")),
+                "מידות לקוח עומק":     num(request.form.get("depth_cm")),
+                "גובה מקלחון (מטר)":   num(request.form.get("height_m")),
+                "מחיר קבוע למ\"ר":    num(request.form.get("price_per_sqm")),
+                "זכוכית":               request.form.get("glass_type", ""),
+                "צבע פרזול":            request.form.get("hardware_color", ""),
+                "אפשרות פירוק":         request.form.get("dismantling", ""),
+                "תשלום מלא/מקדמה":     request.form.get("payment_type", ""),
+                "אמצעי תשלום":          request.form.get("payment_method", ""),
+                "?נדרשת מדידה":         request.form.get("needs_measurement", ""),
+            })
+        else:
+            fields["מחיר בשקלים"] = num(request.form.get("price"))
+        product_id = request.form.get("product_id")
+        if product_id:
+            fields["מוצרים"] = [product_id]
+        fields = {k: v for k, v in fields.items() if v is not None}
+        result = client.update("quotes", record_id, fields)
+        if result:
+            flash("הצעת מחיר עודכנה בהצלחה!", "success")
+            return redirect(url_for("quote_detail", record_id=record_id))
+        else:
+            flash("שגיאה בעדכון הצעת מחיר", "danger")
+    return render_template("quotes/edit.html", quote=quote, products=products)
+
+
+@app.route("/quotes/<record_id>/convert-to-order", methods=["GET"])
+def quote_convert_to_order(record_id):
+    return redirect(url_for("order_new", quote_id=record_id))
+
 
 
 @app.route("/quotes/<record_id>/pdf")
@@ -238,6 +500,20 @@ def quote_pdf(record_id):
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"inline; filename=quote_{record_id[:8]}.pdf"
     return response
+
+
+# ─────────────────────────────────────────────
+# מוצרים
+# ─────────────────────────────────────────────
+@app.route("/quotes/<record_id>/delete", methods=["POST"])
+def quote_delete(record_id):
+    client = db()
+    ok = client.delete("quotes", record_id)
+    if ok:
+        flash("ההצעה נמחקה לצמיתות.", "success")
+    else:
+        flash("שגיאה במחיקת ההצעה", "danger")
+    return redirect(url_for("quotes_list"))
 
 
 # ─────────────────────────────────────────────
@@ -292,12 +568,39 @@ def inventory_list():
     return render_template("inventory/list.html", inventory=inventory)
 
 
+@app.route("/inventory/<record_id>/adjust", methods=["POST"])
+def inventory_adjust(record_id):
+    current_qty = float(request.form.get("current_qty", 0))
+    target_qty = float(request.form.get("target_qty", 0))
+    location = request.form.get("location", "")
+    delta = target_qty - current_qty
+    if delta == 0:
+        flash("אין שינוי בכמות — לא בוצעה פעולה.", "info")
+        return redirect(url_for("inventory_list"))
+    move_type = "כניסה למלאי" if delta > 0 else "יציאה מהמלאי"
+    fields = {
+        "מלאי לפי מיקום": [record_id],
+        "כמות": abs(int(delta)),
+        "סוג תנועה": move_type,
+        "סטטוס תנועה": "פעילה",
+    }
+    if location:
+        fields["מיקום"] = location
+    result = db().create("inventory_movements", fields)
+    if result:
+        flash(f"✅ תיקון בוצע: {'+' if delta > 0 else ''}{int(delta)} יחידות", "success")
+    else:
+        flash("❌ שגיאה ביצירת תנועת תיקון", "danger")
+    return redirect(url_for("inventory_list"))
+
+
 # ─────────────────────────────────────────────
 # מתקינים
 # ─────────────────────────────────────────────
 @app.route("/installers")
 def installers_list():
     installers = db().get_installers()
+    print(f"[DEBUG] Installers found in route: {len(installers)}")
     return render_template("installers/list.html", installers=installers)
 
 
@@ -309,6 +612,54 @@ def installer_detail(record_id):
         return redirect(url_for("installers_list"))
     tasks = db().get_all("tasks", formula=f"FIND('{record_id}', ARRAYJOIN({{מתקין}}))")
     return render_template("installers/detail.html", installer=installer, tasks=tasks)
+
+
+@app.route("/installers/new", methods=["GET", "POST"])
+def installer_new():
+    client = db()
+    if request.method == "POST":
+        fields = {
+            "שם פרטי": request.form.get("שם פרטי", ""),
+            "טלפון": request.form.get("טלפון", ""),
+            "סוג התקנה שיכול לבצע": request.form.get("סוג התקנה שיכול לבצע", ""),
+        }
+        fields = {k: v for k, v in fields.items() if v != ""}
+        if "סוג התקנה שיכול לבצע" in fields:
+            fields["סוג התקנה שיכול לבצע"] = [v.strip() for v in fields["סוג התקנה שיכול לבצע"].split(",") if v.strip()]
+        result = client.create("installers", fields)
+        if result:
+            flash("מתקין נוצר בהצלחה!", "success")
+            return redirect(url_for("installers_list"))
+        else:
+            flash("שגיאה ביצירת מתקין", "danger")
+    return render_template("installers/new.html")
+
+
+@app.route("/installers/<record_id>/edit", methods=["GET", "POST"])
+def installer_edit(record_id):
+    client = db()
+    installer = client.get_one("installers", record_id)
+    if not installer:
+        flash("מתקין לא נמצא", "danger")
+        return redirect(url_for("installers_list"))
+
+    if request.method == "POST":
+        fields = {
+            "שם פרטי": request.form.get("שם פרטי", ""),
+            "טלפון": request.form.get("טלפון", ""),
+            "סוג התקנה שיכול לבצע": request.form.get("סוג התקנה שיכול לבצע", ""),
+        }
+        fields = {k: v for k, v in fields.items() if v != ""}
+        if "סוג התקנה שיכול לבצע" in fields:
+            fields["סוג התקנה שיכול לבצע"] = [v.strip() for v in fields["סוג התקנה שיכול לבצע"].split(",") if v.strip()]
+        result = client.update("installers", record_id, fields)
+        if result:
+            flash("מתקין עודכן בהצלחה!", "success")
+            return redirect(url_for("installer_detail", record_id=record_id))
+        else:
+            flash("שגיאה בעדכון מתקין", "danger")
+
+    return render_template("installers/edit.html", installer=installer)
 
 
 # ─────────────────────────────────────────────

@@ -6,9 +6,26 @@
   <a href="{{ url_for('order_pdf', record_id=order.id) }}" class="btn btn-danger btn-sm" target="_blank">
     <i class="bi bi-file-earmark-pdf me-1"></i>הורד PDF
   </a>
+  <a href="{{ url_for('order_edit', record_id=order.id) }}" class="btn btn-warning btn-sm">
+    <i class="bi bi-pencil me-1"></i>עריכה
+  </a>
+  {% if order.get('סטטוס') != 'בוטל' %}
+  <form method="POST" action="{{ url_for('order_cancel', record_id=order.id) }}" class="d-inline"
+        onsubmit="return confirm('לבטל הזמנה זו?')">
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-x-circle me-1"></i>ביטול הזמנה
+    </button>
+  </form>
+  {% endif %}
   <a href="{{ url_for('orders_list') }}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-right me-1"></i>חזרה
   </a>
+  <form method="POST" action="{{ url_for('order_delete', record_id=order.id) }}" class="d-inline"
+        onsubmit="return confirm('למחוק את ההזמנה לצמיתות? לא ניתן לשחזר.')">
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>מחק לצמיתות
+    </button>
+  </form>
 {% endblock %}
 
 {% block content %}
@@ -25,12 +42,11 @@
       <div class="card-body">
         <ul class="list-unstyled">
           <li class="mb-3">
-            <small class="text-muted d-block">מזהה</small>
-            <code class="small">{{ order.id }}</code>
-          </li>
-          <li class="mb-3">
             <small class="text-muted d-block">לקוח</small>
-            <strong>{{ order.get('לקוח', ['—'])|join(', ') if order.get('לקוח') else '—' }}</strong>
+            <strong>{{ order.get('שם לקוח', '—') }}</strong>
+            {% if order.get('טלפון') %}
+            <div><small><i class="bi bi-telephone me-1"></i>{{ order.get('טלפון') }}</small></div>
+            {% endif %}
           </li>
           <li class="mb-3">
             <small class="text-muted d-block">תיאור</small>
@@ -41,6 +57,12 @@
             {% set s = order.get('סטטוס', '') %}
             <span class="badge {% if s in ['הושלם','אושרה'] %}status-done{% elif s == 'בוטל' %}status-cancelled{% elif s in ['בתהליך','בייצור'] %}status-progress{% elif s == 'ממתינה לאישור' %}status-pending{% else %}status-new{% endif %} fs-6">{{ s or 'חדש' }}</span>
           </li>
+          {% if order.get('מחיר בשקלים') %}
+          <li class="mb-3">
+            <small class="text-muted d-block">מחיר</small>
+            <span class="fw-bold fs-5 text-success">₪{{ order.get('מחיר בשקלים') }}</span>
+          </li>
+          {% endif %}
           {% if order.get('תאריך יצירה') %}
           <li class="mb-3">
             <small class="text-muted d-block">תאריך יצירה</small>
@@ -77,41 +99,9 @@
     </div>
   </div>
 
-  <!-- Order Lines -->
+  <!-- All fields from Airtable -->
   <div class="col-lg-8">
     <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-list-ul me-2"></i>שורות הזמנה ({{ lines|length }})</span>
-      </div>
-      <div class="card-body p-0">
-        {% if lines %}
-        <div class="table-responsive">
-          <table class="table mb-0">
-            <thead>
-              <tr><th>פריט</th><th>כמות</th><th>מחיר יחידה</th><th>סה"כ</th></tr>
-            </thead>
-            <tbody>
-              {% for line in lines %}
-              <tr>
-                <td>{{ line.get('מוצר', line.get('שם', '—')) }}</td>
-                <td>{{ line.get('כמות', '—') }}</td>
-                <td>{{ line.get('מחיר', '—') }}</td>
-                <td>{{ line.get('סה"כ', '—') }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <div class="text-center py-4 text-muted">
-          <i class="bi bi-list-ul fs-2 d-block mb-2"></i>אין שורות הזמנה
-        </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- All fields from Airtable -->
-    <div class="card mt-3">
       <div class="card-header"><i class="bi bi-database me-2"></i>כל השדות מ-Airtable</div>
       <div class="card-body">
         <div class="row">

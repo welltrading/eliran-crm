@@ -13,48 +13,96 @@
   <div class="card-header d-flex justify-content-between align-items-center">
     <span><i class="bi bi-box-seam me-2"></i>רשימת מוצרים ({{ products|length }})</span>
     <form class="d-flex gap-2" method="get">
-      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm search-box" placeholder="חפש שם מוצר...">
+      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm search-box" placeholder="חפש שם מוצר או דגם...">
       <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
       {% if search %}<a href="{{ url_for('products_list') }}" class="btn btn-outline-secondary btn-sm">נקה</a>{% endif %}
     </form>
   </div>
   <div class="card-body p-0">
     {% if products %}
+
+    {# קיבוץ לפי דגם בסיס #}
+    {% set ns = namespace(current_model='') %}
+
     <div class="table-responsive">
       <table class="table table-hover mb-0">
-        <thead>
+        <thead class="table-dark">
           <tr>
-            <th style="width:60px">תמונה</th>
-            <th>שם מוצר</th>
+            <th>דגם בסיס</th>
             <th>מידה</th>
+            <th>גובה</th>
             <th>סוג זכוכית</th>
             <th>גוון פרזול</th>
-            <th>גובה</th>
+            <th>מקט</th>
           </tr>
         </thead>
         <tbody>
           {% for p in products %}
-          <tr>
-            <td style="width:60px">
-              {% set img = p.get('תמונה') %}
-              {% if img and img|length > 0 %}
-              <img src="{{ img[0].get('url', '') }}" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">
-              {% else %}
-              <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width:50px;height:50px;">
-                <i class="bi bi-image text-muted"></i>
-              </div>
-              {% endif %}
-            </td>
-            <td><strong>{{ p.get('שם מוצר מלא', '—') }}</strong></td>
-            <td>{{ p.get('מידה', '—') }}</td>
-            <td>{{ p.get('סוג זכוכית', '—') }}</td>
-            <td>{{ p.get('גוון פרזול', '—') }}</td>
-            <td>{{ p.get('גובה', '—') }}</td>
-          </tr>
+            {% set model = p.get('דגם בסיס', '') %}
+
+            {# כותרת קבוצה — כשמשתנה הדגם #}
+            {% if model != ns.current_model %}
+              {% set ns.current_model = model %}
+              <tr class="table-secondary">
+                <td colspan="6" class="fw-bold py-2">
+                  <i class="bi bi-collection me-1"></i>
+                  {{ model or '—' }}
+                  {% set dgm = p.get('דגם', '') %}
+                  {% if dgm and dgm != model %}
+                    <span class="text-muted fw-normal me-2"> — {{ dgm }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endif %}
+
+            {# שורת וריאציה #}
+            <tr>
+              <td class="text-muted small ps-4">{{ model }}</td>
+              <td>
+                {% set mida = p.get('מידה', '') %}
+                {% if mida %}
+                  <span class="badge rounded-pill" style="background:#e8f4fd;color:#1a6fa8;font-size:0.85rem;">{{ mida }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% set gova = p.get('גובה', '') %}
+                {% if gova %}
+                  <span class="text-secondary">{{ gova }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% set zchuchit = p.get('סוג זכוכית', '') %}
+                {% if zchuchit %}
+                  {% if zchuchit == 'שקופה' %}
+                    <span class="badge rounded-pill" style="background:#f0f0f0;color:#333;">{{ zchuchit }}</span>
+                  {% elif zchuchit == 'פסים' %}
+                    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1a56db;">{{ zchuchit }}</span>
+                  {% elif zchuchit == 'גרניט' %}
+                    <span class="badge rounded-pill" style="background:#fce8e8;color:#b71c1c;">{{ zchuchit }}</span>
+                  {% else %}
+                    <span class="badge rounded-pill bg-light text-dark">{{ zchuchit }}</span>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% set parzol = p.get('גוון פרזול', '') %}
+                {% if parzol %}
+                  {% if parzol == 'שחור' %}
+                    <span class="badge rounded-pill" style="background:#222;color:#fff;">{{ parzol }}</span>
+                  {% elif parzol == 'ניקל' %}
+                    <span class="badge rounded-pill" style="background:#d0d0d0;color:#333;">{{ parzol }}</span>
+                  {% else %}
+                    <span class="badge rounded-pill bg-light text-dark">{{ parzol }}</span>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="small text-muted">{{ p.get('מקט', '—') }}</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
     {% else %}
     <div class="text-center py-5 text-muted">
       <i class="bi bi-box-seam fs-1 d-block mb-3"></i>

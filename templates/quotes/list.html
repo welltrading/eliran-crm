@@ -13,7 +13,7 @@
           {{ s or 'הכל' }}
         </a>
       {% endfor %}
-      <a href="{{ url_for('quote_new') }}" class="btn btn-sm btn-success ms-2">
+      <a href="{{ url_for('quote_select_type') }}" class="btn btn-sm btn-success ms-2">
         <i class="bi bi-plus-lg me-1"></i>הצעה חדשה
       </a>
     </div>
@@ -22,21 +22,58 @@
     {% if quotes %}
     <div class="table-responsive">
       <table class="table table-hover mb-0">
-        <thead>
-          <tr><th>#</th><th>לקוח</th><th>נושא</th><th>סטטוס</th><th>תאריך</th><th></th></tr>
+        <thead class="table-light">
+          <tr>
+            <th style="width:80px">#</th>
+            <th>שם לקוח</th>
+            <th>טלפון</th>
+            <th>כתובת</th>
+            <th>מוצר</th>
+            <th style="width:70px">כמות</th>
+            <th style="width:110px">סטטוס</th>
+            <th style="width:100px">תאריך</th>
+            <th style="width:80px"></th>
+          </tr>
         </thead>
         <tbody>
           {% for q in quotes %}
-          <tr onclick="window.location='{{ url_for('quote_detail', record_id=q.id) }}'">
-            <td><span class="text-muted small font-monospace">{{ q.id[:6] }}</span></td>
-            <td><strong>{{ q.get('לקוח', ['—'])|join(', ') if q.get('לקוח') else '—' }}</strong></td>
-            <td>{{ q.get('נושא', q.get('תיאור', q.get('שם', '—')))[:50] }}</td>
+          {% set s = q.get('סטטוס', 'טיוטה') %}
+          {% set products = q.get('מוצרים', []) %}
+          <tr onclick="window.location='{{ url_for('quote_detail', record_id=q.id) }}'" style="cursor:pointer">
             <td>
-              {% set s = q.get('סטטוס', '') %}
-              <span class="badge {% if s == 'אושרה' %}status-done{% elif s == 'נדחתה' %}status-cancelled{% elif s == 'נשלחה' %}status-progress{% elif s == 'הומרה להזמנה' %}bg-info text-dark{% else %}status-new{% endif %}">{{ s or 'טיוטה' }}</span>
+              <span class="fw-bold text-primary">{{ q.get('Name', '—') }}</span>
             </td>
-            <td class="text-muted small">{{ q.get('תאריך', q.get('Created', ''))[:10] }}</td>
-            <td class="text-end"><a href="{{ url_for('quote_detail', record_id=q.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a></td>
+            <td><strong>{{ q.get('שם לקוח', '—') }}</strong></td>
+            <td class="text-muted small">{{ q.get('טלפון', '—') }}</td>
+            <td class="text-muted small">{{ q.get('כתובת', '—') }}</td>
+            <td class="small">
+              {% set dagam = q.get('דגם (from מוצרים)') %}
+              {% if dagam %}
+                {% if dagam is iterable and dagam is not string %}
+                  {{ dagam | join(', ') }}
+                {% else %}
+                  {{ dagam }}
+                {% endif %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">{{ q.get('כמות', '—') }}</td>
+            <td>
+              <span class="badge {% if s == 'אושרה' %}status-done{% elif s == 'נדחתה' %}status-cancelled{% elif s == 'נשלחה' %}status-progress{% elif s == 'הומרה להזמנה' %}bg-info text-dark{% else %}status-new{% endif %}">
+                {{ s }}
+              </span>
+            </td>
+            <td class="text-muted small">
+              {% set d = q.get('תאריך יצירה', '') %}
+              {{ d[:10] if d else '—' }}
+            </td>
+            <td class="text-end" onclick="event.stopPropagation()">
+              <div class="d-flex gap-1 justify-content-end">
+                <a href="{{ url_for('quote_detail', record_id=q.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+                <a href="{{ url_for('quote_pdf', record_id=q.id) }}" class="btn btn-outline-secondary btn-sm" title="PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
+              </div>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

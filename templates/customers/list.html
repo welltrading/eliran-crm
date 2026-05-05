@@ -28,18 +28,21 @@
             <th>טלפון</th>
             <th>אימייל</th>
             <th>כתובת</th>
-            <th></th>
+            <th>הזמנות</th>
           </tr>
         </thead>
         <tbody>
           {% for c in customers %}
           <tr onclick="window.location='{{ url_for('customer_detail', record_id=c.id) }}'">
-            <td><strong>{{ c.get('שם', '—') }}</strong></td>
+            <td><strong>{{ c.get('שם לקוח', '—') }}</strong></td>
             <td>{{ c.get('טלפון', '—') }}</td>
-            <td>{{ c.get('אימייל', '—') }}</td>
-            <td>{{ c.get('כתובת', '—') }}</td>
+            <td>{{ c.get('אימייל', '') or '—' }}</td>
+            <td>{{ c.get('כתובת', '') or '—' }}</td>
             <td class="text-end">
-              <a href="{{ url_for('customer_detail', record_id=c.id) }}" class="btn btn-outline-primary btn-sm">פרטים</a>
+              <a href="{{ url_for('customers_list') }}?customer_id={{ c.id }}#orders" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-cart me-1"></i>הזמנות
+              </a>
+              <a href="{{ url_for('customer_detail', record_id=c.id) }}" class="btn btn-outline-secondary btn-sm ms-1">פרטים</a>
             </td>
           </tr>
           {% endfor %}
