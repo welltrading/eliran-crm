@@ -35,7 +35,7 @@ app = Flask(__name__)
 @app.route('/test_installers')
 def test_installers():
     from airtable_client import AirtableClient
-    client = AirtableClient()
+    client = AirttableClient()
     installers = client.get_installers()
     return jsonify({"count": len(installers), "first": installers[0] if installers else None})
 

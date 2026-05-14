@@ -1,35 +1,24 @@
 import os
-import io
-import re
 import uuid
 import logging
-from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, g
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 
 # Load secrets
-PROJECT_ROOT = Path(__file__).resolve().parent
-
-
+# Load secrets — manual parse to handle single-line env files
+import re as _re
 def _load_env_file(path):
-    env_path = Path(path)
-    if not env_path.exists():
-        return
     try:
-        content = env_path.read_text(encoding="utf-8")
-    except OSError:
-        return
+        content = open(path).read()
+        for k, v in _re.findall(r'([A-Z_]+)=["\']?([^"\' ]+)["\']?', content):
+            if k not in os.environ:
+                os.environ[k] = v
+    except Exception:
+        pass
 
-    normalized = re.sub(r"([\"'])\s*([A-Z][A-Z0-9_]+)=", r"\1\n\2=", content)
-    if normalized != content:
-        env_path.write_text(normalized, encoding="utf-8")
-
-    load_dotenv(stream=io.StringIO(normalized), override=False)
-
-
-_load_env_file(PROJECT_ROOT / ".a0proj" / "secrets.env")
-_load_env_file(PROJECT_ROOT / ".a0proj" / "variables.env")
+_load_env_file("/a0/usr/projects/eliran/.a0proj/secrets.env")
+_load_env_file("/a0/usr/projects/eliran/.a0proj/variables.env")
 
 # Fix API key env name
 if os.environ.get("AIRTABLE_API") and not os.environ.get("AIRTABLE_API_KEY"):

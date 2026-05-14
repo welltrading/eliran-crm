@@ -3,7 +3,7 @@ import io
 import re
 from pathlib import Path
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from app import app
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 
@@ -30,14 +30,5 @@ _load_env_file(PROJECT_ROOT / ".a0proj" / "variables.env")
 if os.environ.get("AIRTABLE_API") and not os.environ.get("AIRTABLE_API_KEY"):
     os.environ["AIRTABLE_API_KEY"] = os.environ["AIRTABLE_API"]
 
-app = Flask(__name__)
-
-@app.route('/test_installers')
-def test_installers():
-    from airtable_client import AirtableClient
-    client = AirtableClient()
-    installers = client.get_installers()
-    return jsonify({"count": len(installers), "first": installers[0] if installers else None})
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=5000, debug=False)

@@ -2,6 +2,62 @@
 {% block title %}הצעת מחיר חדשה{% endblock %}
 {% block page_title %}<i class="bi bi-file-earmark-plus me-2"></i>הצעת מחיר חדשה{% endblock %}
 
+{% block extra_head %}
+<style>
+  .product-picker {
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .product-picker-search {
+    border: 0;
+    border-bottom: 1px solid #eef1f4;
+    border-radius: 0;
+    padding: 0.9rem 1rem;
+  }
+  .product-picker-search:focus {
+    box-shadow: none;
+    border-color: #86b7fe;
+  }
+  .product-picker-list {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .product-picker-list.collapsed {
+    display: none;
+  }
+  .product-option {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: right;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f1f3f5;
+    transition: background-color 0.15s ease;
+    line-height: 1.65;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .product-option:hover {
+    background: #f8f9fa;
+  }
+  .product-option.active {
+    background: #e8f0ff;
+    color: #1a237e;
+    font-weight: 600;
+  }
+  .product-option:last-child {
+    border-bottom: 0;
+  }
+  .product-picker-empty {
+    padding: 1rem;
+    color: #6c757d;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-8">
@@ -37,19 +93,74 @@
           <div class="row g-3 mb-3">
             <div class="col-md-8">
               <label class="form-label fw-bold">מוצר</label>
-              <select name="product_id" class="form-select" id="productSelect">
-                <option value="">— בחר מוצר —</option>
-                {% for p in products %}
-                <option value="{{ p.id }}"
-                  data-name="{{ p.get('שם מוצר מלא', '') }}">
-                  {{ p.get('שם מוצר מלא', '—') }}
-                </option>
-                {% endfor %}
-              </select>
-              <!-- Product preview card -->
-              <div id="productPreview" class="mt-2 p-2 bg-light rounded border d-none">
-                <small class="text-muted">מוצר נבחר: </small><strong id="previewName"></strong>
-                <span class="me-2"></span><small class="text-muted">מחיר: </small><strong class="text-success" id="previewPrice"></strong>
+              <input type="hidden" name="product_id" id="productIdInput">
+              <div class="product-picker">
+                <input type="text" class="form-control product-picker-search" id="productSearch" placeholder="חיפוש מוצר...">
+                <div class="product-picker-list" id="productList">
+                  {% for p in products %}
+                  {% set display_text = p.get('מוצר לבחירה כולל מלאי', p.get('שם מוצר מלא', '—')) %}
+                  <button type="button"
+                          class="product-option"
+                          data-id="{{ p.id }}"
+                          data-name="{{ p.get('שם מוצר מלא', '') }}"
+                          data-display="{{ display_text|replace('"', '&quot;') }}"
+                          data-price="{{ p.get('מחיר', '') }}"
+                          data-stock-display="{{ p.get('מוצר לבחירה כולל מלאי', '')|replace('"', '&quot;') }}">
+                    {{ display_text }}
+                  </button>
+                  {% endfor %}
+                  <div id="productListEmpty" class="product-picker-empty d-none">לא נמצאו מוצרים תואמים</div>
+                </div>
+              </div>
+              <small class="text-muted d-block mt-2">מוצג כאן השדה המלא: <strong>מוצר לבחירה כולל מלאי</strong></small>
+              <div id="productPreview" class="mt-2 p-3 bg-light rounded border d-none">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                  <div>
+                    <small class="text-muted d-block">מוצר נבחר</small>
+                    <strong id="previewName"></strong>
+                  </div>
+                  <div>
+                    <small class="text-muted d-block">מחיר</small>
+                    <strong class="text-success" id="previewPrice"></strong>
+                  </div>
+                </div>
+
+                <div class="border rounded p-3 bg-white">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong><i class="bi bi-bar-chart-line me-1"></i>זמינות במלאי</strong>
+                    <span class="badge text-bg-dark">סה״כ: <span id="inventoryTotal">0</span></span>
+                  </div>
+
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                      <span>מחסן</span>
+                      <strong id="warehouseQty">0</strong>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="מלאי במחסן" style="height: 18px;">
+                      <div id="warehouseBar" class="progress-bar bg-primary" style="width: 0%">0</div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                      <span>חנות</span>
+                      <strong id="storeQty">0</strong>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="מלאי בחנות" style="height: 18px;">
+                      <div id="storeBar" class="progress-bar bg-success" style="width: 0%">0</div>
+                    </div>
+                  </div>
+
+                  <div id="otherInventoryWrapper" class="mb-1 d-none">
+                    <div class="d-flex justify-content-between small mb-1">
+                      <span>מיקומים נוספים</span>
+                      <strong id="otherQty">0</strong>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="מלאי במיקומים נוספים" style="height: 18px;">
+                      <div id="otherBar" class="progress-bar bg-warning text-dark" style="width: 0%">0</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="col-md-4">
@@ -108,25 +219,122 @@
 
 {% block extra_scripts %}
 <script>
-  const productSelect = document.getElementById('productSelect');
+  const productIdInput = document.getElementById('productIdInput');
+  const productSearch = document.getElementById('productSearch');
+  const productList = document.getElementById('productList');
+  const productOptions = Array.from(document.querySelectorAll('.product-option'));
+  const productListEmpty = document.getElementById('productListEmpty');
   const priceInput = document.getElementById('priceInput');
   const previewName = document.getElementById('previewName');
   const previewPrice = document.getElementById('previewPrice');
   const productPreview = document.getElementById('productPreview');
+  const inventoryTotal = document.getElementById('inventoryTotal');
+  const warehouseQty = document.getElementById('warehouseQty');
+  const storeQty = document.getElementById('storeQty');
+  const otherQty = document.getElementById('otherQty');
+  const warehouseBar = document.getElementById('warehouseBar');
+  const storeBar = document.getElementById('storeBar');
+  const otherBar = document.getElementById('otherBar');
+  const otherInventoryWrapper = document.getElementById('otherInventoryWrapper');
 
-  productSelect.addEventListener('change', function() {
-    const selected = this.options[this.selectedIndex];
-    const price = selected.getAttribute('data-price');
-    const name = selected.getAttribute('data-name');
-    if (price && price !== '' && price !== 'None') {
-      priceInput.value = parseFloat(price).toFixed(2);
+  function updateBar(barEl, qtyEl, value, total) {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    const safeTotal = total > 0 ? total : 0;
+    const percent = safeTotal > 0 ? Math.round((safeValue / safeTotal) * 100) : 0;
+    qtyEl.textContent = safeValue;
+    barEl.style.width = percent + '%';
+    barEl.textContent = safeValue;
+  }
+
+  function parseStockDisplay(rawValue) {
+    const parsed = { warehouse: 0, store: 0, other: 0, total: 0 };
+    if (!rawValue) return parsed;
+
+    const cleanValue = String(rawValue).replace(/<br\s*\/?\>/gi, ' ');
+    const locationQtyMatches = [...cleanValue.matchAll(/([^:|,]+):\s*(-?\d+(?:\.\d+)?)/g)];
+
+    locationQtyMatches.forEach((match) => {
+      const locationName = (match[1] || '').trim().toLowerCase();
+      const qty = Math.round(parseFloat(match[2] || '0'));
+      if (locationName.includes('מחסן')) {
+        parsed.warehouse += qty;
+      } else if (locationName.includes('חנות') || locationName.includes('אולם') || locationName.includes('תצוגה')) {
+        parsed.store += qty;
+      } else {
+        parsed.other += qty;
+      }
+    });
+
+    parsed.total = parsed.warehouse + parsed.store + parsed.other;
+    return parsed;
+  }
+
+  function selectProduct(option) {
+    productOptions.forEach((btn) => btn.classList.remove('active'));
+    option.classList.add('active');
+
+    const productId = option.dataset.id || '';
+    const price = option.dataset.price || '';
+    const displayName = option.dataset.display || option.dataset.name || '';
+    const stockDisplay = option.dataset.stockDisplay || '';
+    const stock = parseStockDisplay(stockDisplay);
+
+    productIdInput.value = productId;
+    productSearch.value = displayName;
+    productList.classList.add('collapsed');
+
+    if (price && price !== 'None') {
+      const parsedPrice = parseFloat(price);
+      if (!Number.isNaN(parsedPrice)) {
+        priceInput.value = parsedPrice.toFixed(2);
+      }
     }
-    if (name) {
-      previewName.textContent = name;
-      previewPrice.textContent = price && price !== 'None' ? '₪' + parseFloat(price).toFixed(0) : '—';
-      productPreview.classList.remove('d-none');
-    } else {
-      productPreview.classList.add('d-none');
+
+    previewName.textContent = displayName || '—';
+    previewPrice.textContent = price && price !== 'None' && !Number.isNaN(parseFloat(price))
+      ? '₪' + parseFloat(price).toFixed(0)
+      : '—';
+
+    inventoryTotal.textContent = stock.total;
+    updateBar(warehouseBar, warehouseQty, stock.warehouse, stock.total);
+    updateBar(storeBar, storeQty, stock.store, stock.total);
+    updateBar(otherBar, otherQty, stock.other, stock.total);
+    otherInventoryWrapper.classList.toggle('d-none', stock.other <= 0);
+    productPreview.classList.remove('d-none');
+  }
+
+  function filterProducts() {
+    const query = (productSearch.value || '').trim().toLowerCase();
+    let visibleCount = 0;
+
+    productList.classList.remove('collapsed');
+
+    productOptions.forEach((option) => {
+      const haystack = [
+        option.dataset.display || '',
+        option.dataset.name || ''
+      ].join(' ').toLowerCase();
+      const isVisible = !query || haystack.includes(query);
+      option.classList.toggle('d-none', !isVisible);
+      if (isVisible) visibleCount += 1;
+    });
+
+    productListEmpty.classList.toggle('d-none', visibleCount !== 0);
+  }
+
+  productOptions.forEach((option) => {
+    option.addEventListener('click', () => selectProduct(option));
+  });
+
+  productSearch.addEventListener('input', filterProducts);
+  productSearch.addEventListener('focus', () => {
+    productList.classList.remove('collapsed');
+  });
+
+  document.addEventListener('click', (event) => {
+    const picker = document.querySelector('.product-picker');
+    if (picker && !picker.contains(event.target)) {
+      productList.classList.add('collapsed');
     }
   });
 </script>

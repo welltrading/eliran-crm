@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import requests
+import time
 
-base_url = 'http://127.0.0.1:5000'
+base_url = 'http://127.0.0.1:5017' # Use the port the server will run on
 
 def verify_endpoint(url, expected_status=200, method='GET', data=None):
     try:
@@ -29,19 +30,25 @@ def verify_endpoint(url, expected_status=200, method='GET', data=None):
 
 print("Starting Flask application verification...")
 
-checks = [
-    ('/', 200),
-    ('/customers', 200),
-    ('/quotes', 200),
-    ('/orders', 200),
-    ('/inventory', 200),
-    ('/api/health', 200),
-]
+# Verify root route
+print("
+Verifying root route (should be 'Hello, World!')")
+verify_endpoint(base_url + '/')
 
-results = []
-for path, expected_status in checks:
-    print(f"\nVerifying {path}")
-    results.append(verify_endpoint(base_url + path, expected_status=expected_status))
+# Verify new proposal form route
+print("
+Verifying new proposal form route")
+verify_endpoint(base_url + '/proposals/new')
 
-passed = sum(1 for x in results if x)
-print(f"\nVerification complete: {passed}/{len(results)} checks passed.")
+# Verify proposals list route (requires database connection)
+print("
+Verifying proposals list route (requires database connection)")
+verify_endpoint(base_url + '/proposals')
+
+# Verify edit proposal form route (assuming proposal with ID 1 exists)
+print("
+Verifying edit proposal form route for ID 1")
+verify_endpoint(base_url + '/proposals/1/edit')
+
+print("
+Verification complete.")

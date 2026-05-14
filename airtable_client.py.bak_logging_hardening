@@ -1,8 +1,8 @@
 import os
-import logging
 from pyairtable import Api
 from pyairtable.formulas import match
 from functools import wraps
+import traceback
 
 
 class AirtableClientError(Exception):
@@ -18,7 +18,6 @@ class AirtableClientError(Exception):
 # ─── Config ───────────────────────────────────────────────────────────────────
 AIRTABLE_API_KEY = os.environ.get("AIRTABLE_API_KEY", "")
 BASE_ID = "app77CdzKEqLlhZ8d"
-logger = logging.getLogger(__name__)
 
 # ─── Table IDs ────────────────────────────────────────────────────────────────
 TABLES = {
@@ -85,7 +84,8 @@ class AirtableClient:
     # ── Generic CRUD ──────────────────────────────────────────────────────────
 
     def _handle_error(self, operation: str, table_name: str, error: Exception, default, raise_on_error: bool):
-        logger.exception("AirtableClient %s(%s) failed", operation, table_name)
+        print(f"[AirtableClient] {operation}({table_name}) error: {error}")
+        traceback.print_exc()
         if raise_on_error:
             raise AirtableClientError(
                 operation=operation,
@@ -128,18 +128,8 @@ class AirtableClient:
 
     def update(self, table_name: str, record_id: str, fields: dict, raise_on_error: bool = False) -> dict | None:
         """Update an existing record."""
-        if not record_id:
-            error = ValueError("record_id is required")
-            return self._handle_error("update", table_name, error, None, raise_on_error)
-        if not isinstance(fields, dict):
-            error = TypeError("fields must be a dict")
-            return self._handle_error("update", table_name, error, None, raise_on_error)
-        sanitized_fields = {k: v for k, v in fields.items() if k}
-        if not sanitized_fields:
-            error = ValueError("at least one field is required for update")
-            return self._handle_error("update", table_name, error, None, raise_on_error)
         try:
-            r = self.table(table_name).update(record_id, sanitized_fields, typecast=True)
+            r = self.table(table_name).update(record_id, fields)
             return {"id": r["id"], **r["fields"]}
         except Exception as e:
             return self._handle_error("update", table_name, e, None, raise_on_error)
@@ -230,8 +220,7 @@ class AirtableClient:
     def get_products(self, raise_on_error: bool = False) -> list:
         return self.get_all("products", sort=["דגם בסיס", "מידה"], fields=[
             "שם מוצר מלא", "דגם", "דגם בסיס", "מידה", "גובה",
-            "סוג זכוכית", "גוון פרזול", "מקט", "תיאור המוצר", "תמונה",
-            "מוצר לבחירה כולל מלאי"
+            "סוג זכוכית", "גוון פרזול", "מקט", "תיאור המוצר", "תמונה"
         ], raise_on_error=raise_on_error)
 
     def create_product(self, fields: dict, raise_on_error: bool = False) -> dict | None:
